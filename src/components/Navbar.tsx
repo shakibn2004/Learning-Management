@@ -63,7 +63,7 @@ export const Navbar: React.FC<NavbarProps> = ({ activeTab, setActiveTab }) => {
   const filteredNav = navItems.filter((item) => item.roles.includes(activeRole));
 
   return (
-    <aside className="w-full lg:w-64 glass-panel border-r border-slate-800/80 shrink-0 p-4 flex flex-col justify-between">
+    <aside className="w-full lg:w-64 glass-panel border-r border-slate-800/80 shrink-0 p-4 flex flex-col justify-between lg:sticky lg:top-20 lg:h-[calc(100vh-6rem)] lg:overflow-y-auto rounded-2xl">
       <div className="space-y-6">
         {/* User Card */}
         <div className="p-3 bg-slate-900/60 rounded-xl border border-slate-800 flex items-center space-x-3">
