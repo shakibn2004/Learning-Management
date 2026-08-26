@@ -4,6 +4,7 @@ import React, { useState } from 'react';
 import { useLMS } from '../context/LMSContext';
 import { UserRole } from '../types';
 import { useRouter } from 'next/navigation';
+import { BrandLogo } from './BrandLogo';
 import { ShieldCheck, UserCheck, BookOpen, GraduationCap, Info, X } from 'lucide-react';
 
 const ROLES_INFO: { role: UserRole; title: string; defaultRoute: string; icon: any; desc: string }[] = [
@@ -38,7 +39,7 @@ const ROLES_INFO: { role: UserRole; title: string; defaultRoute: string; icon: a
 ];
 
 export const RoleHeader: React.FC = () => {
-  const { activeRole, switchRole, currentUser } = useLMS();
+  const { activeRole, switchRole } = useLMS();
   const [showMatrix, setShowMatrix] = useState(false);
   const router = useRouter();
 
@@ -50,21 +51,12 @@ export const RoleHeader: React.FC = () => {
   return (
     <header className="sticky top-0 z-40 w-full bg-[#141d2b] border-b border-slate-800/80 px-4 sm:px-6 lg:px-8 py-3">
       <div className="max-w-[1440px] mx-auto flex flex-col md:flex-row items-center justify-between gap-4">
-        {/* Brand Logo matching 1st reference image (SaaSPro) */}
+        {/* Brand Logo Header featuring SVG Crest matching favicon */}
         <div className="flex items-center space-x-3">
-          <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-[#3b82f6] to-[#8b5cf6] flex items-center justify-center text-white font-extrabold text-lg shadow-md shadow-blue-500/20">
-            S
-          </div>
-          <div>
-            <div className="flex items-center gap-2">
-              <h1 className="text-xl font-extrabold text-white tracking-tight">
-                SaaS<span className="text-[#3b82f6]">Pro</span>
-              </h1>
-              <span className="px-2 py-0.5 text-[10px] font-mono font-medium bg-[#1a2436] text-[#60a5fa] border border-slate-800 rounded-md">
-                LMS Platform
-              </span>
-            </div>
-          </div>
+          <BrandLogo size="md" />
+          <span className="px-2 py-0.5 text-[10px] font-mono font-medium bg-[#1a2436] text-[#60a5fa] border border-slate-800 rounded-md">
+            LMS Platform
+          </span>
         </div>
 
         {/* Dynamic 4-Role Quick Switcher */}
@@ -113,7 +105,7 @@ export const RoleHeader: React.FC = () => {
           <div className="bg-[#141d2b] w-full max-w-4xl rounded-2xl border border-slate-700/80 shadow-2xl overflow-hidden p-6">
             <div className="flex items-center justify-between pb-4 border-b border-slate-800">
               <div className="flex items-center space-x-2">
-                <ShieldCheck className="w-6 h-6 text-[#3b82f6]" />
+                <BrandLogo size="sm" showText={false} />
                 <h3 className="text-lg font-bold text-white">Strict 4-Role Access Matrix (Project Spec)</h3>
               </div>
               <button

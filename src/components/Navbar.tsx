@@ -4,6 +4,7 @@ import React from 'react';
 import { useLMS } from '../context/LMSContext';
 import { usePathname } from 'next/navigation';
 import Link from 'next/link';
+import { BrandLogo } from './BrandLogo';
 import {
   LayoutDashboard,
   BookOpen,
@@ -50,17 +51,12 @@ export const Navbar: React.FC = () => {
   return (
     <aside className="w-full lg:w-60 bg-[#141d2b] border border-slate-800/80 shrink-0 p-5 flex flex-col justify-between lg:sticky lg:top-20 lg:h-[calc(100vh-6rem)] overflow-y-auto rounded-2xl z-30">
       <div className="space-y-6">
-        {/* Brand Logo Header matching 1st reference image */}
-        <div className="flex items-center space-x-3 px-2">
-          <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-[#3b82f6] to-[#8b5cf6] flex items-center justify-center text-white font-extrabold text-base shadow-sm">
-            S
-          </div>
-          <span className="text-lg font-extrabold text-white tracking-tight">
-            SaaS<span className="text-[#3b82f6]">Pro</span>
-          </span>
+        {/* Brand Logo Header featuring SVG Crest matching favicon */}
+        <div className="px-1">
+          <BrandLogo size="md" />
         </div>
 
-        {/* Clean Menu Items matching 1st reference image */}
+        {/* Clean Menu Items */}
         <div className="space-y-1">
           {currentNav.map((item) => {
             const Icon = item.icon;
