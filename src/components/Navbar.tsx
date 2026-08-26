@@ -8,70 +8,61 @@ import {
   LayoutDashboard,
   BookOpen,
   Newspaper,
-  ShieldCheck,
   Award,
   GraduationCap,
   Users,
-  Sparkles,
+  Settings,
+  Layers,
 } from 'lucide-react';
 
 export const Navbar: React.FC = () => {
   const { activeRole, currentUser } = useLMS();
   const pathname = usePathname();
 
-  // Role-namespaced navigation menus
+  // Role-namespaced navigation menus matching 1st reference image structure
   const navMenus = {
     Admin: [
-      { path: '/admin/dashboard', label: 'Admin Overview', icon: LayoutDashboard },
-      { path: '/admin/users', label: 'User Role Management', icon: Users },
-      { path: '/admin/courses', label: 'Global Courses Control', icon: BookOpen },
-      { path: '/admin/blogs', label: 'Blog & Editorial', icon: Newspaper },
+      { path: '/admin/dashboard', label: 'Dashboard', icon: LayoutDashboard },
+      { path: '/admin/users', label: 'Team', icon: Users },
+      { path: '/admin/courses', label: 'Projects', icon: BookOpen },
+      { path: '/admin/blogs', label: 'Analytics', icon: Newspaper },
     ],
     'Content Manager': [
-      { path: '/content-manager/dashboard', label: 'CM Dashboard', icon: LayoutDashboard },
-      { path: '/content-manager/courses', label: 'Course & Quiz Directory', icon: BookOpen },
-      { path: '/content-manager/gradebook', label: 'Student Progress', icon: Award },
-      { path: '/content-manager/blogs', label: 'Blog Draft & Publish', icon: Newspaper },
+      { path: '/content-manager/dashboard', label: 'Dashboard', icon: LayoutDashboard },
+      { path: '/content-manager/courses', label: 'Projects', icon: BookOpen },
+      { path: '/content-manager/gradebook', label: 'Analytics', icon: Award },
+      { path: '/content-manager/blogs', label: 'Editorial', icon: Newspaper },
     ],
     Instructor: [
-      { path: '/instructor/dashboard', label: 'Instructor Dashboard', icon: LayoutDashboard },
-      { path: '/instructor/courses', label: 'My Owned Courses', icon: BookOpen },
-      { path: '/instructor/gradebook', label: 'Student Gradebook', icon: Award },
+      { path: '/instructor/dashboard', label: 'Dashboard', icon: LayoutDashboard },
+      { path: '/instructor/courses', label: 'Projects', icon: BookOpen },
+      { path: '/instructor/gradebook', label: 'Analytics', icon: Award },
     ],
     Student: [
-      { path: '/student/dashboard', label: 'Student Dashboard', icon: LayoutDashboard },
-      { path: '/student/catalog', label: 'Course Catalog', icon: BookOpen },
-      { path: '/student/my-courses', label: 'My Enrolled Courses', icon: GraduationCap },
-      { path: '/student/blogs', label: 'Technical Blog', icon: Newspaper },
+      { path: '/student/dashboard', label: 'Dashboard', icon: LayoutDashboard },
+      { path: '/student/catalog', label: 'Projects', icon: BookOpen },
+      { path: '/student/my-courses', label: 'My Courses', icon: GraduationCap },
+      { path: '/student/blogs', label: 'Articles', icon: Newspaper },
     ],
   };
 
   const currentNav = navMenus[activeRole] || navMenus.Admin;
 
   return (
-    <aside className="w-full lg:w-64 glass-panel border-r border-slate-800/80 shrink-0 p-4 flex flex-col justify-between lg:sticky lg:top-20 lg:h-[calc(100vh-6rem)] lg:overflow-y-auto rounded-2xl">
+    <aside className="w-full lg:w-60 bg-[#141d2b] border-r border-slate-800/80 shrink-0 p-5 flex flex-col justify-between lg:sticky lg:top-16 lg:h-[calc(100vh-4rem)] lg:overflow-y-auto rounded-2xl">
       <div className="space-y-6">
-        {/* User Card */}
-        <div className="p-3 bg-slate-900/60 rounded-xl border border-slate-800 flex items-center space-x-3">
-          <img
-            src={currentUser.avatar}
-            alt={currentUser.name}
-            className="w-10 h-10 rounded-full object-cover border-2 border-indigo-500/50"
-          />
-          <div className="overflow-hidden">
-            <h4 className="text-sm font-semibold text-white truncate">{currentUser.name}</h4>
-            <div className="flex items-center space-x-1">
-              <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
-              <span className="text-[11px] font-medium text-slate-400">{currentUser.role}</span>
-            </div>
+        {/* Brand Logo Header matching 1st reference image */}
+        <div className="flex items-center space-x-3 px-2">
+          <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-[#3b82f6] to-[#8b5cf6] flex items-center justify-center text-white font-extrabold text-base shadow-sm">
+            S
           </div>
+          <span className="text-lg font-extrabold text-white tracking-tight">
+            SaaS<span className="text-[#3b82f6]">Pro</span>
+          </span>
         </div>
 
-        {/* Nav list */}
+        {/* Clean Menu Items matching 1st reference image */}
         <div className="space-y-1">
-          <p className="px-3 text-[10px] font-mono font-semibold uppercase tracking-wider text-slate-500 mb-2">
-            {activeRole} Route Menu
-          </p>
           {currentNav.map((item) => {
             const Icon = item.icon;
             const isActive = pathname === item.path;
@@ -81,27 +72,39 @@ export const Navbar: React.FC = () => {
                 href={item.path}
                 className={`w-full flex items-center space-x-3 px-3 py-2.5 rounded-xl text-xs font-semibold border transition-all duration-150 ${
                   isActive
-                    ? 'bg-indigo-600/20 text-indigo-300 border-indigo-500/40 shadow-sm'
-                    : 'border-transparent text-slate-400 hover:text-slate-200 hover:bg-slate-800/50'
+                    ? 'bg-[#3b82f6]/20 text-[#60a5fa] border-[#3b82f6]/40 shadow-sm'
+                    : 'border-transparent text-slate-400 hover:text-slate-200 hover:bg-[#1a2436]'
                 }`}
               >
-                <Icon className={`w-4 h-4 ${isActive ? 'text-indigo-400' : 'text-slate-400'}`} />
+                <Icon className={`w-4 h-4 ${isActive ? 'text-[#3b82f6]' : 'text-slate-400'}`} />
                 <span>{item.label}</span>
               </Link>
             );
           })}
+
+          <div className="pt-2">
+            <button
+              onClick={() => alert('Settings module active in SaaSPro LMS enterprise edition.')}
+              className="w-full flex items-center space-x-3 px-3 py-2.5 rounded-xl text-xs font-semibold border border-transparent text-slate-400 hover:text-slate-200 hover:bg-[#1a2436] transition-all"
+            >
+              <Settings className="w-4 h-4 text-slate-400" />
+              <span>Settings</span>
+            </button>
+          </div>
         </div>
       </div>
 
-      {/* Role permission status banner */}
-      <div className="mt-6 p-3 rounded-xl bg-gradient-to-br from-indigo-950/40 to-slate-900 border border-indigo-500/20">
-        <div className="flex items-center space-x-2 text-indigo-400 mb-1">
-          <Sparkles className="w-3.5 h-3.5" />
-          <span className="text-xs font-bold">Route Security</span>
+      {/* Simplified User Card at Bottom */}
+      <div className="pt-4 border-t border-slate-800/80 flex items-center space-x-3 px-1">
+        <img
+          src={currentUser.avatar}
+          alt={currentUser.name}
+          className="w-9 h-9 rounded-full object-cover border border-slate-700 shrink-0"
+        />
+        <div className="overflow-hidden">
+          <h4 className="text-xs font-semibold text-white truncate">{currentUser.name}</h4>
+          <span className="text-[10px] text-slate-400 truncate block">{activeRole}</span>
         </div>
-        <p className="text-[11px] text-slate-400 leading-snug">
-          Namespaced route: <strong className="text-white font-mono text-[10px]">{pathname}</strong>. Route Guard active.
-        </p>
       </div>
     </aside>
   );
