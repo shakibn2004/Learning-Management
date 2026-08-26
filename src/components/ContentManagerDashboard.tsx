@@ -14,11 +14,9 @@ import {
   HelpCircle,
   Video,
   FileText,
-  Users,
-  CheckCircle2,
   Sparkles,
-  Lock,
   Layers,
+  Award,
 } from 'lucide-react';
 
 export const ContentManagerDashboard: React.FC = () => {
@@ -32,31 +30,27 @@ export const ContentManagerDashboard: React.FC = () => {
 
   const [activeCourseIdForQuiz, setActiveCourseIdForQuiz] = useState<string | null>(null);
 
-  // Filter courses based on role & permissions
-  // Content Manager & Admin: can see & edit all
-  // Instructor: can edit owned courses only (show badge for owned)
   const displayCourses = courses.filter((course) => {
     if (activeRole === 'Admin' || activeRole === 'Content Manager') return true;
     if (activeRole === 'Instructor') return course.instructorId === currentUser.id;
     return true;
   });
 
+  const totalLessons = displayCourses.reduce((acc, c) => acc + (c.lessons?.length || 0), 0);
+  const totalQuizzes = displayCourses.filter((c) => !!c.quiz).length;
+
   return (
-    <div className="space-y-8 animate-fadeIn">
-      {/* Header Banner */}
-      <div className="glass-panel p-6 rounded-2xl border border-indigo-500/30 bg-gradient-to-r from-slate-900 via-indigo-950/40 to-slate-900 flex flex-col md:flex-row md:items-center justify-between gap-4">
+    <div className="space-y-6 animate-fadeIn">
+      {/* Header Title Bar matching 1st reference image */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-2">
         <div>
-          <div className="inline-flex items-center space-x-2 px-3 py-1 rounded-full bg-indigo-500/10 border border-indigo-500/30 text-indigo-400 text-xs font-semibold mb-2">
-            <Sparkles className="w-3.5 h-3.5" />
-            <span>Curriculum & Content Management</span>
-          </div>
-          <h2 className="text-2xl font-bold text-white">
-            {activeRole === 'Instructor' ? 'My Courses & Lessons Management' : 'Platform Course & Quiz Directory'}
+          <h2 className="text-2xl font-extrabold text-white tracking-tight">
+            {activeRole === 'Instructor' ? 'My Courses Overview' : 'Curriculum & Content Overview'}
           </h2>
-          <p className="text-xs text-slate-400 mt-1 max-w-2xl">
+          <p className="text-xs text-slate-400 mt-0.5">
             {activeRole === 'Instructor'
-              ? 'Manage your owned courses, construct sequential video & text lessons, and configure auto-graded quizzes.'
-              : 'Platform-wide authority to construct courses, arrange lesson hierarchies, and publish auto-graded assessments.'}
+              ? `Welcome back, ${currentUser.name}. Manage your authored courses and student rosters.`
+              : 'Platform-wide course authoring, video lessons, and auto-graded quiz assessments.'}
           </p>
         </div>
 
@@ -66,16 +60,63 @@ export const ContentManagerDashboard: React.FC = () => {
               setCourseToEdit(null);
               setShowCourseModal(true);
             }}
-            className="flex items-center space-x-2 px-4 py-2.5 bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-500 hover:to-purple-500 text-white rounded-xl text-xs font-semibold shadow-lg shadow-indigo-500/25 shrink-0"
+            className="flex items-center space-x-2 px-4 py-2.5 bg-[#3b82f6] hover:bg-blue-600 text-white rounded-xl text-xs font-bold shadow-md shadow-blue-500/20 shrink-0"
           >
             <Plus className="w-4 h-4" />
-            <span>Create New Course</span>
+            <span>+ Create New Course</span>
           </button>
         )}
       </div>
 
+      {/* TOP 4 STAT CARDS GRID (matching Admin & 1st reference image) */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
+        <div className="bg-[#141d2b] p-5 rounded-2xl border border-slate-800/80 flex items-center justify-between">
+          <div>
+            <span className="text-xs font-medium text-slate-400">Total Courses</span>
+            <div className="text-2xl font-extrabold text-[#34d399] mt-1">{displayCourses.length}</div>
+            <div className="text-[11px] text-[#34d399] font-medium mt-1">+8 new this month</div>
+          </div>
+          <div className="w-11 h-11 rounded-xl bg-[#10b981]/15 border border-[#10b981]/30 flex items-center justify-center text-[#34d399]">
+            <BookOpen className="w-5 h-5" />
+          </div>
+        </div>
+
+        <div className="bg-[#141d2b] p-5 rounded-2xl border border-slate-800/80 flex items-center justify-between">
+          <div>
+            <span className="text-xs font-medium text-slate-400">Video Modules</span>
+            <div className="text-2xl font-extrabold text-[#60a5fa] mt-1">{totalLessons}</div>
+            <div className="text-[11px] text-[#60a5fa] font-medium mt-1">Interactive lessons</div>
+          </div>
+          <div className="w-11 h-11 rounded-xl bg-[#3b82f6]/15 border border-[#3b82f6]/30 flex items-center justify-center text-[#60a5fa]">
+            <Video className="w-5 h-5" />
+          </div>
+        </div>
+
+        <div className="bg-[#141d2b] p-5 rounded-2xl border border-slate-800/80 flex items-center justify-between">
+          <div>
+            <span className="text-xs font-medium text-slate-400">Active Quizzes</span>
+            <div className="text-2xl font-extrabold text-[#c084fc] mt-1">{totalQuizzes}</div>
+            <div className="text-[11px] text-[#c084fc] font-medium mt-1">Auto-graded assessments</div>
+          </div>
+          <div className="w-11 h-11 rounded-xl bg-[#a855f7]/15 border border-[#a855f7]/30 flex items-center justify-center text-[#c084fc]">
+            <Award className="w-5 h-5" />
+          </div>
+        </div>
+
+        <div className="bg-[#141d2b] p-5 rounded-2xl border border-slate-800/80 flex items-center justify-between">
+          <div>
+            <span className="text-xs font-medium text-slate-400">Draft Articles</span>
+            <div className="text-2xl font-extrabold text-[#fb923c] mt-1">12</div>
+            <div className="text-[11px] text-[#fb923c] font-medium mt-1">Editorial review</div>
+          </div>
+          <div className="w-11 h-11 rounded-xl bg-[#f97316]/15 border border-[#f97316]/30 flex items-center justify-center text-[#fb923c]">
+            <FileText className="w-5 h-5" />
+          </div>
+        </div>
+      </div>
+
       {/* Course Cards Grid */}
-      <div className="grid grid-cols-1 gap-6">
+      <div className="grid grid-cols-1 gap-5">
         {displayCourses.map((course) => {
           const isOwnerOrFullCM =
             activeRole === 'Admin' ||
@@ -83,9 +124,9 @@ export const ContentManagerDashboard: React.FC = () => {
             (activeRole === 'Instructor' && course.instructorId === currentUser.id);
 
           return (
-            <div key={course.id} className="glass-panel p-6 rounded-2xl border border-slate-800 space-y-6">
+            <div key={course.id} className="bg-[#141d2b] p-6 rounded-2xl border border-slate-800/80 space-y-6">
               {/* Course Top Info */}
-              <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-slate-800 pb-4">
+              <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-slate-800/80 pb-4">
                 <div className="flex items-start space-x-4">
                   <img
                     src={course.coverImage}
@@ -101,11 +142,11 @@ export const ContentManagerDashboard: React.FC = () => {
                         {course.level}
                       </span>
                       {course.published ? (
-                        <span className="text-[10px] font-semibold px-2 py-0.5 rounded bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
+                        <span className="text-[10px] font-semibold px-2 py-0.5 rounded bg-[#10b981]/15 text-[#34d399] border border-[#10b981]/30">
                           Published
                         </span>
                       ) : (
-                        <span className="text-[10px] font-semibold px-2 py-0.5 rounded bg-amber-500/10 text-amber-400 border border-amber-500/20">
+                        <span className="text-[10px] font-semibold px-2 py-0.5 rounded bg-[#f59e0b]/15 text-[#fbbf24] border border-[#f59e0b]/30">
                           Draft
                         </span>
                       )}
@@ -114,7 +155,7 @@ export const ContentManagerDashboard: React.FC = () => {
                     <p className="text-xs text-slate-400 mt-1 line-clamp-1">{course.subtitle}</p>
                     <div className="mt-2 text-[11px] text-slate-400 flex items-center gap-4">
                       <span>Instructor: <strong className="text-slate-200">{course.instructorName}</strong></span>
-                      <span>Price: <strong className="text-emerald-400">${course.price}</strong></span>
+                      <span>Price: <strong className="text-[#34d399]">${course.price}</strong></span>
                     </div>
                   </div>
                 </div>
@@ -127,17 +168,17 @@ export const ContentManagerDashboard: React.FC = () => {
                         setCourseToEdit(course);
                         setShowCourseModal(true);
                       }}
-                      className="p-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-semibold flex items-center space-x-1"
+                      className="p-2 rounded-xl bg-[#1a2436] hover:bg-slate-800 text-slate-200 text-xs font-semibold flex items-center space-x-1 border border-slate-800"
                     >
-                      <Edit3 className="w-4 h-4 text-indigo-400" />
+                      <Edit3 className="w-4 h-4 text-[#60a5fa]" />
                       <span className="hidden sm:inline">Edit Course</span>
                     </button>
 
                     <button
                       onClick={() => setActiveCourseIdForQuiz(course.id)}
-                      className="p-2 rounded-xl bg-purple-600/20 hover:bg-purple-600/30 text-purple-300 border border-purple-500/30 text-xs font-semibold flex items-center space-x-1"
+                      className="p-2 rounded-xl bg-[#a855f7]/15 hover:bg-[#a855f7]/25 text-[#c084fc] border border-[#a855f7]/30 text-xs font-semibold flex items-center space-x-1"
                     >
-                      <HelpCircle className="w-4 h-4 text-purple-400" />
+                      <HelpCircle className="w-4 h-4 text-[#c084fc]" />
                       <span>{course.quiz ? 'Edit Quiz' : 'Add Quiz'}</span>
                     </button>
 
@@ -155,7 +196,7 @@ export const ContentManagerDashboard: React.FC = () => {
               <div className="space-y-3">
                 <div className="flex items-center justify-between">
                   <h4 className="text-xs font-bold uppercase tracking-wider text-slate-400 flex items-center gap-2">
-                    <Layers className="w-4 h-4 text-indigo-400" />
+                    <Layers className="w-4 h-4 text-[#3b82f6]" />
                     <span>Lesson Syllabus ({course.lessons?.length || 0} Lessons)</span>
                   </h4>
 
@@ -165,7 +206,7 @@ export const ContentManagerDashboard: React.FC = () => {
                         setActiveCourseIdForLesson(course.id);
                         setLessonToEdit(null);
                       }}
-                      className="flex items-center space-x-1 text-xs font-semibold text-indigo-400 hover:text-indigo-300"
+                      className="flex items-center space-x-1 text-xs font-semibold text-[#3b82f6] hover:underline"
                     >
                       <Plus className="w-3.5 h-3.5" />
                       <span>Add Lesson</span>
@@ -178,16 +219,16 @@ export const ContentManagerDashboard: React.FC = () => {
                     {course.lessons.map((lesson, idx) => (
                       <div
                         key={lesson.id}
-                        className="p-3 bg-slate-900/60 rounded-xl border border-slate-800 flex items-center justify-between gap-4 hover:border-slate-700 transition-colors"
+                        className="p-3 bg-[#1a2436] rounded-xl border border-slate-800/80 flex items-center justify-between gap-4 hover:border-slate-700 transition-colors"
                       >
                         <div className="flex items-center space-x-3">
                           <span className="text-xs font-mono font-bold text-slate-500">
                             #{idx + 1}
                           </span>
                           {lesson.type === 'video' ? (
-                            <Video className="w-4 h-4 text-indigo-400" />
+                            <Video className="w-4 h-4 text-[#60a5fa]" />
                           ) : (
-                            <FileText className="w-4 h-4 text-emerald-400" />
+                            <FileText className="w-4 h-4 text-[#34d399]" />
                           )}
                           <div>
                             <span className="text-xs font-semibold text-white">{lesson.title}</span>
@@ -220,7 +261,7 @@ export const ContentManagerDashboard: React.FC = () => {
                     ))}
                   </div>
                 ) : (
-                  <div className="p-4 text-center bg-slate-900/40 rounded-xl border border-slate-800/60 text-xs text-slate-500">
+                  <div className="p-4 text-center bg-[#1a2436]/40 rounded-xl border border-slate-800/60 text-xs text-slate-500">
                     No lessons created yet. Click "Add Lesson" to add content.
                   </div>
                 )}
@@ -230,12 +271,8 @@ export const ContentManagerDashboard: React.FC = () => {
         })}
       </div>
 
-      {/* Course Modal */}
-      {showCourseModal && (
-        <CourseModal courseToEdit={courseToEdit} onClose={() => setShowCourseModal(false)} />
-      )}
-
-      {/* Lesson Modal */}
+      {/* Modals */}
+      {showCourseModal && <CourseModal courseToEdit={courseToEdit} onClose={() => setShowCourseModal(false)} />}
       {activeCourseIdForLesson && (
         <LessonModal
           courseId={activeCourseIdForLesson}
@@ -246,13 +283,8 @@ export const ContentManagerDashboard: React.FC = () => {
           }}
         />
       )}
-
-      {/* Quiz Builder Modal */}
       {activeCourseIdForQuiz && (
-        <QuizBuilderModal
-          courseId={activeCourseIdForQuiz}
-          onClose={() => setActiveCourseIdForQuiz(null)}
-        />
+        <QuizBuilderModal courseId={activeCourseIdForQuiz} onClose={() => setActiveCourseIdForQuiz(null)} />
       )}
     </div>
   );

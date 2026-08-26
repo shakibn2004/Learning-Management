@@ -12,10 +12,9 @@ import {
   Award,
   Search,
   CheckCircle2,
-  Sparkles,
-  ChevronRight,
-  UserCheck,
   Zap,
+  Video,
+  Star,
 } from 'lucide-react';
 
 interface StudentDashboardProps {
@@ -32,15 +31,12 @@ export const StudentDashboard: React.FC<StudentDashboardProps> = ({ activeTab, s
   const [activeCourseForLessons, setActiveCourseForLessons] = useState<Course | null>(null);
   const [activeCourseForQuiz, setActiveCourseForQuiz] = useState<Course | null>(null);
 
-  // Published courses available
   const availableCourses = courses.filter((c) => c.published);
 
-  // Enrolled courses for current user
   const enrolledCourses = availableCourses.filter((c) =>
     currentUser.enrolledCourseIds?.includes(c.id)
   );
 
-  // Filtered available courses
   const filteredCourses = availableCourses.filter((c) => {
     const matchesSearch =
       c.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -50,41 +46,84 @@ export const StudentDashboard: React.FC<StudentDashboardProps> = ({ activeTab, s
   });
 
   return (
-    <div className="space-y-8 animate-fadeIn">
-      {/* Header Banner */}
-      <div className="glass-panel p-6 rounded-2xl border border-indigo-500/30 bg-gradient-to-r from-slate-900 via-indigo-950/40 to-slate-900 flex flex-col md:flex-row md:items-center justify-between gap-4">
+    <div className="space-y-6 animate-fadeIn">
+      {/* Header Title Bar matching 1st reference image */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-2">
         <div>
-          <div className="inline-flex items-center space-x-2 px-3 py-1 rounded-full bg-indigo-500/10 border border-indigo-500/30 text-indigo-400 text-xs font-semibold mb-2">
-            <Sparkles className="w-3.5 h-3.5" />
-            <span>Interactive Student Hub</span>
-          </div>
-          <h2 className="text-2xl font-bold text-white">
-            {activeTab === 'my-courses' ? 'My Enrolled Courses & Progress' : 'Course Catalog & Discovery'}
+          <h2 className="text-2xl font-extrabold text-white tracking-tight">
+            {activeTab === 'my-courses' ? 'Student Learning Command Center' : 'Course Catalog Discovery'}
           </h2>
-          <p className="text-xs text-slate-400 mt-1 max-w-2xl">
+          <p className="text-xs text-slate-400 mt-0.5">
             {activeTab === 'my-courses'
-              ? 'Continue your sequential learning journey, track completion percentages in real time, and pass auto-graded quizzes.'
-              : 'Browse top-rated full-stack courses, inspect curricula, and enroll with a single click.'}
+              ? `Welcome back, ${currentUser.name}! Continue your interactive learning journey.`
+              : 'Browse top-rated full-stack courses, inspect curricula, and enroll instantly.'}
           </p>
         </div>
 
         {activeTab === 'my-courses' ? (
           <button
             onClick={() => setActiveTab('courses')}
-            className="flex items-center space-x-2 px-4 py-2.5 bg-slate-800 hover:bg-slate-700 text-white rounded-xl text-xs font-semibold shrink-0"
+            className="flex items-center space-x-2 px-4 py-2.5 bg-[#3b82f6] hover:bg-blue-600 text-white rounded-xl text-xs font-bold shadow-md shadow-blue-500/20 shrink-0"
           >
-            <BookOpen className="w-4 h-4 text-indigo-400" />
-            <span>Discover More Courses</span>
+            <BookOpen className="w-4 h-4" />
+            <span>Discover Courses</span>
           </button>
         ) : (
           <button
             onClick={() => setActiveTab('my-courses')}
-            className="flex items-center space-x-2 px-4 py-2.5 bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-500 hover:to-purple-500 text-white rounded-xl text-xs font-semibold shadow-lg shadow-indigo-500/25 shrink-0"
+            className="flex items-center space-x-2 px-4 py-2.5 bg-[#3b82f6] hover:bg-blue-600 text-white rounded-xl text-xs font-bold shadow-md shadow-blue-500/20 shrink-0"
           >
             <GraduationCap className="w-4 h-4" />
             <span>My Courses ({enrolledCourses.length})</span>
           </button>
         )}
+      </div>
+
+      {/* TOP 4 STAT CARDS GRID (Unified with Admin) */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
+        <div className="bg-[#141d2b] p-5 rounded-2xl border border-slate-800/80 flex items-center justify-between">
+          <div>
+            <span className="text-xs font-medium text-slate-400">Enrolled Courses</span>
+            <div className="text-2xl font-extrabold text-[#34d399] mt-1">{enrolledCourses.length}</div>
+            <div className="text-[11px] text-[#34d399] font-medium mt-1">Active learning paths</div>
+          </div>
+          <div className="w-11 h-11 rounded-xl bg-[#10b981]/15 border border-[#10b981]/30 flex items-center justify-center text-[#34d399]">
+            <GraduationCap className="w-5 h-5" />
+          </div>
+        </div>
+
+        <div className="bg-[#141d2b] p-5 rounded-2xl border border-slate-800/80 flex items-center justify-between">
+          <div>
+            <span className="text-xs font-medium text-slate-400">Lessons Completed</span>
+            <div className="text-2xl font-extrabold text-[#60a5fa] mt-1">18</div>
+            <div className="text-[11px] text-[#60a5fa] font-medium mt-1">Sequential modules</div>
+          </div>
+          <div className="w-11 h-11 rounded-xl bg-[#3b82f6]/15 border border-[#3b82f6]/30 flex items-center justify-center text-[#60a5fa]">
+            <Video className="w-5 h-5" />
+          </div>
+        </div>
+
+        <div className="bg-[#141d2b] p-5 rounded-2xl border border-slate-800/80 flex items-center justify-between">
+          <div>
+            <span className="text-xs font-medium text-slate-400">Quizzes Passed</span>
+            <div className="text-2xl font-extrabold text-[#c084fc] mt-1">8</div>
+            <div className="text-[11px] text-[#c084fc] font-medium mt-1">Auto-graded assessments</div>
+          </div>
+          <div className="w-11 h-11 rounded-xl bg-[#a855f7]/15 border border-[#a855f7]/30 flex items-center justify-center text-[#c084fc]">
+            <Award className="w-5 h-5" />
+          </div>
+        </div>
+
+        <div className="bg-[#141d2b] p-5 rounded-2xl border border-slate-800/80 flex items-center justify-between">
+          <div>
+            <span className="text-xs font-medium text-slate-400">Avg Quiz Score</span>
+            <div className="text-2xl font-extrabold text-[#fb923c] mt-1">94%</div>
+            <div className="text-[11px] text-[#fb923c] font-medium mt-1">Top performance tier</div>
+          </div>
+          <div className="w-11 h-11 rounded-xl bg-[#f97316]/15 border border-[#f97316]/30 flex items-center justify-center text-[#fb923c]">
+            <Star className="w-5 h-5" />
+          </div>
+        </div>
       </div>
 
       {/* VIEW 1: MY ENROLLED COURSES */}
@@ -98,7 +137,7 @@ export const StudentDashboard: React.FC<StudentDashboardProps> = ({ activeTab, s
                 return (
                   <div
                     key={course.id}
-                    className="glass-card p-6 rounded-2xl border border-slate-800 flex flex-col justify-between space-y-4"
+                    className="bg-[#141d2b] p-6 rounded-2xl border border-slate-800/80 flex flex-col justify-between space-y-4"
                   >
                     <div className="space-y-3">
                       <div className="flex items-center justify-between">
@@ -119,9 +158,9 @@ export const StudentDashboard: React.FC<StudentDashboardProps> = ({ activeTab, s
                           <span className="text-slate-400">Course Completion</span>
                           <span className="font-bold text-white">{progressPct}%</span>
                         </div>
-                        <div className="w-full bg-slate-900 h-2.5 rounded-full overflow-hidden border border-slate-800">
+                        <div className="w-full bg-[#1a2436] h-2.5 rounded-full overflow-hidden border border-slate-800">
                           <div
-                            className="bg-gradient-to-r from-indigo-500 via-purple-500 to-emerald-400 h-full transition-all duration-500"
+                            className="bg-[#3b82f6] h-full transition-all duration-500"
                             style={{ width: `${progressPct}%` }}
                           ></div>
                         </div>
@@ -131,7 +170,7 @@ export const StudentDashboard: React.FC<StudentDashboardProps> = ({ activeTab, s
                     <div className="pt-4 border-t border-slate-800 flex items-center justify-between gap-3">
                       <button
                         onClick={() => setActiveCourseForLessons(course)}
-                        className="flex-1 py-2.5 px-4 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl text-xs font-bold shadow-md shadow-indigo-500/20 flex items-center justify-center space-x-2"
+                        className="flex-1 py-2.5 px-4 bg-[#3b82f6] hover:bg-blue-600 text-white rounded-xl text-xs font-bold shadow-md shadow-blue-500/20 flex items-center justify-center space-x-2"
                       >
                         <PlayCircle className="w-4 h-4" />
                         <span>Continue Lessons</span>
@@ -140,9 +179,9 @@ export const StudentDashboard: React.FC<StudentDashboardProps> = ({ activeTab, s
                       {course.quiz && (
                         <button
                           onClick={() => setActiveCourseForQuiz(course)}
-                          className="py-2.5 px-4 bg-purple-600/20 hover:bg-purple-600/30 text-purple-300 border border-purple-500/40 rounded-xl text-xs font-bold flex items-center justify-center space-x-1"
+                          className="py-2.5 px-4 bg-[#a855f7]/15 hover:bg-[#a855f7]/25 text-[#c084fc] border border-[#a855f7]/30 rounded-xl text-xs font-bold flex items-center justify-center space-x-1"
                         >
-                          <Award className="w-4 h-4 text-purple-400" />
+                          <Award className="w-4 h-4 text-[#c084fc]" />
                           <span>Quiz</span>
                         </button>
                       )}
@@ -152,15 +191,15 @@ export const StudentDashboard: React.FC<StudentDashboardProps> = ({ activeTab, s
               })}
             </div>
           ) : (
-            <div className="p-12 text-center glass-panel rounded-2xl border border-slate-800 space-y-3">
+            <div className="p-12 text-center bg-[#141d2b] rounded-2xl border border-slate-800/80 space-y-3">
               <GraduationCap className="w-12 h-12 text-slate-600 mx-auto" />
               <h3 className="text-lg font-bold text-white">No Enrolled Courses Yet</h3>
               <p className="text-xs text-slate-400 max-w-md mx-auto">
-                You are currently not enrolled in any courses. Explore the catalog and click "Enroll in Course" to get started!
+                You are currently not enrolled in any courses. Explore the catalog and click "Enroll Now" to get started!
               </p>
               <button
                 onClick={() => setActiveTab('courses')}
-                className="mt-4 px-5 py-2.5 bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold rounded-xl shadow-lg shadow-indigo-500/25"
+                className="mt-4 px-5 py-2.5 bg-[#3b82f6] hover:bg-blue-600 text-white text-xs font-bold rounded-xl shadow-md shadow-blue-500/20"
               >
                 Browse Course Catalog
               </button>
@@ -173,15 +212,15 @@ export const StudentDashboard: React.FC<StudentDashboardProps> = ({ activeTab, s
       {activeTab === 'courses' && (
         <div className="space-y-6">
           {/* Search & Filter */}
-          <div className="flex flex-col sm:flex-row items-center justify-between gap-4 glass-panel p-4 rounded-2xl border border-slate-800">
+          <div className="flex flex-col sm:flex-row items-center justify-between gap-4 bg-[#141d2b] p-4 rounded-2xl border border-slate-800/80">
             <div className="relative w-full sm:w-80">
               <Search className="w-4 h-4 text-slate-400 absolute left-3 top-3" />
               <input
                 type="text"
-                placeholder="Search courses, topics..."
+                placeholder="Search courses..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="glass-input w-full text-xs pl-9 pr-3 py-2.5 rounded-xl"
+                className="bg-[#1a2436] w-full text-xs pl-9 pr-3 py-2.5 rounded-xl text-slate-200 border border-slate-800 focus:outline-none focus:border-[#3b82f6]"
               />
             </div>
 
@@ -192,8 +231,8 @@ export const StudentDashboard: React.FC<StudentDashboardProps> = ({ activeTab, s
                   onClick={() => setSelectedCategory(cat)}
                   className={`px-3 py-1.5 rounded-xl text-xs font-semibold whitespace-nowrap transition-colors ${
                     selectedCategory === cat
-                      ? 'bg-indigo-600 text-white shadow-sm'
-                      : 'bg-slate-900/60 text-slate-400 hover:text-white'
+                      ? 'bg-[#3b82f6] text-white shadow-sm'
+                      : 'bg-[#1a2436] text-slate-400 hover:text-white'
                   }`}
                 >
                   {cat}
@@ -210,20 +249,20 @@ export const StudentDashboard: React.FC<StudentDashboardProps> = ({ activeTab, s
               return (
                 <div
                   key={course.id}
-                  className="glass-card rounded-2xl border border-slate-800 overflow-hidden flex flex-col justify-between"
+                  className="bg-[#141d2b] rounded-2xl border border-slate-800/80 overflow-hidden flex flex-col justify-between"
                 >
                   <div>
                     <div className="relative h-44 overflow-hidden">
                       <img
                         src={course.coverImage}
                         alt={course.title}
-                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                        className="w-full h-full object-cover hover:scale-105 transition-transform duration-300"
                       />
                       <div className="absolute top-3 left-3 flex items-center space-x-2">
                         <span className="px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider bg-black/70 backdrop-blur-md text-white border border-white/10">
                           {course.category}
                         </span>
-                        <span className="px-2.5 py-1 rounded-full text-[10px] font-bold bg-indigo-600/80 backdrop-blur-md text-white">
+                        <span className="px-2.5 py-1 rounded-full text-[10px] font-bold bg-[#3b82f6] text-white">
                           {course.level}
                         </span>
                       </div>
@@ -247,9 +286,9 @@ export const StudentDashboard: React.FC<StudentDashboardProps> = ({ activeTab, s
                           setActiveTab('my-courses');
                           setActiveCourseForLessons(course);
                         }}
-                        className="w-full py-2.5 px-4 bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-300 border border-emerald-500/40 rounded-xl text-xs font-bold flex items-center justify-center space-x-2"
+                        className="w-full py-2.5 px-4 bg-[#10b981]/15 hover:bg-[#10b981]/25 text-[#34d399] border border-[#10b981]/30 rounded-xl text-xs font-bold flex items-center justify-center space-x-2"
                       >
-                        <CheckCircle2 className="w-4 h-4 text-emerald-400" />
+                        <CheckCircle2 className="w-4 h-4 text-[#34d399]" />
                         <span>Enrolled • Launch Lessons</span>
                       </button>
                     ) : (
@@ -261,7 +300,7 @@ export const StudentDashboard: React.FC<StudentDashboardProps> = ({ activeTab, s
                             alert('Switch to the Student role using the top header to enroll as a student.');
                           }
                         }}
-                        className="w-full py-2.5 px-4 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl text-xs font-bold shadow-lg shadow-indigo-500/25 flex items-center justify-center space-x-2"
+                        className="w-full py-2.5 px-4 bg-[#3b82f6] hover:bg-blue-600 text-white rounded-xl text-xs font-bold shadow-md shadow-blue-500/20 flex items-center justify-center space-x-2"
                       >
                         <Zap className="w-4 h-4" />
                         <span>Enroll Now (${course.price})</span>
