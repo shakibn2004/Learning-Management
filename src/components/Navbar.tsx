@@ -2,58 +2,55 @@
 
 import React from 'react';
 import { useLMS } from '../context/LMSContext';
+import { usePathname } from 'next/navigation';
+import Link from 'next/link';
 import {
   LayoutDashboard,
   BookOpen,
   Newspaper,
   ShieldCheck,
   Award,
-  Users,
   GraduationCap,
   Sparkles,
 } from 'lucide-react';
 
-interface NavbarProps {
-  activeTab: string;
-  setActiveTab: (tab: string) => void;
-}
-
-export const Navbar: React.FC<NavbarProps> = ({ activeTab, setActiveTab }) => {
+export const Navbar: React.FC = () => {
   const { activeRole, currentUser } = useLMS();
+  const pathname = usePathname();
 
   const navItems = [
     {
-      id: 'dashboard',
+      path: '/dashboard',
       label: 'Dashboard',
       icon: LayoutDashboard,
       roles: ['Admin', 'Content Manager', 'Instructor', 'Student'],
     },
     {
-      id: 'courses',
+      path: '/courses',
       label: activeRole === 'Student' ? 'Course Catalog' : 'Course Management',
       icon: BookOpen,
       roles: ['Admin', 'Content Manager', 'Instructor', 'Student'],
     },
     {
-      id: 'my-courses',
+      path: '/my-courses',
       label: 'My Enrolled Courses',
       icon: GraduationCap,
       roles: ['Student'],
     },
     {
-      id: 'gradebook',
+      path: '/gradebook',
       label: 'Student Progress',
       icon: Award,
       roles: ['Admin', 'Content Manager', 'Instructor'],
     },
     {
-      id: 'blogs',
+      path: '/blogs',
       label: 'Blog & Content',
       icon: Newspaper,
       roles: ['Admin', 'Content Manager', 'Instructor', 'Student'],
     },
     {
-      id: 'admin',
+      path: '/admin',
       label: 'Admin Control Panel',
       icon: ShieldCheck,
       roles: ['Admin'],
@@ -88,11 +85,11 @@ export const Navbar: React.FC<NavbarProps> = ({ activeTab, setActiveTab }) => {
           </p>
           {filteredNav.map((item) => {
             const Icon = item.icon;
-            const isActive = activeTab === item.id;
+            const isActive = pathname === item.path || (pathname === '/' && item.path === '/dashboard');
             return (
-              <button
-                key={item.id}
-                onClick={() => setActiveTab(item.id)}
+              <Link
+                key={item.path}
+                href={item.path}
                 className={`w-full flex items-center space-x-3 px-3 py-2.5 rounded-xl text-xs font-semibold transition-all duration-150 ${
                   isActive
                     ? 'bg-indigo-600/20 text-indigo-300 border border-indigo-500/40 shadow-sm'
@@ -101,7 +98,7 @@ export const Navbar: React.FC<NavbarProps> = ({ activeTab, setActiveTab }) => {
               >
                 <Icon className={`w-4 h-4 ${isActive ? 'text-indigo-400' : 'text-slate-400'}`} />
                 <span>{item.label}</span>
-              </button>
+              </Link>
             );
           })}
         </div>
