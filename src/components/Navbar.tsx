@@ -11,53 +11,43 @@ import {
   ShieldCheck,
   Award,
   GraduationCap,
+  Users,
   Sparkles,
+  Layers,
 } from 'lucide-react';
 
 export const Navbar: React.FC = () => {
   const { activeRole, currentUser } = useLMS();
   const pathname = usePathname();
 
-  const navItems = [
-    {
-      path: '/dashboard',
-      label: 'Dashboard',
-      icon: LayoutDashboard,
-      roles: ['Admin', 'Content Manager', 'Instructor', 'Student'],
-    },
-    {
-      path: '/courses',
-      label: activeRole === 'Student' ? 'Course Catalog' : 'Course Management',
-      icon: BookOpen,
-      roles: ['Admin', 'Content Manager', 'Instructor', 'Student'],
-    },
-    {
-      path: '/my-courses',
-      label: 'My Enrolled Courses',
-      icon: GraduationCap,
-      roles: ['Student'],
-    },
-    {
-      path: '/gradebook',
-      label: 'Student Progress',
-      icon: Award,
-      roles: ['Admin', 'Content Manager', 'Instructor'],
-    },
-    {
-      path: '/blogs',
-      label: 'Blog & Content',
-      icon: Newspaper,
-      roles: ['Admin', 'Content Manager', 'Instructor', 'Student'],
-    },
-    {
-      path: '/admin',
-      label: 'Admin Control Panel',
-      icon: ShieldCheck,
-      roles: ['Admin'],
-    },
-  ];
+  // Role-namespaced navigation menus
+  const navMenus = {
+    Admin: [
+      { path: '/admin/dashboard', label: 'Admin Overview', icon: LayoutDashboard },
+      { path: '/admin/users', label: 'User Role Management', icon: Users },
+      { path: '/admin/courses', label: 'Global Courses Control', icon: BookOpen },
+      { path: '/admin/blogs', label: 'Blog & Editorial', icon: Newspaper },
+    ],
+    'Content Manager': [
+      { path: '/content-manager/dashboard', label: 'CM Dashboard', icon: LayoutDashboard },
+      { path: '/content-manager/courses', label: 'Course & Quiz Directory', icon: BookOpen },
+      { path: '/content-manager/gradebook', label: 'Student Progress', icon: Award },
+      { path: '/content-manager/blogs', label: 'Blog Draft & Publish', icon: Newspaper },
+    ],
+    Instructor: [
+      { path: '/instructor/dashboard', label: 'Instructor Dashboard', icon: LayoutDashboard },
+      { path: '/instructor/courses', label: 'My Owned Courses', icon: BookOpen },
+      { path: '/instructor/gradebook', label: 'Student Gradebook', icon: Award },
+    ],
+    Student: [
+      { path: '/student/dashboard', label: 'Student Dashboard', icon: LayoutDashboard },
+      { path: '/student/catalog', label: 'Course Catalog', icon: BookOpen },
+      { path: '/student/my-courses', label: 'My Enrolled Courses', icon: GraduationCap },
+      { path: '/student/blogs', label: 'Technical Blog', icon: Newspaper },
+    ],
+  };
 
-  const filteredNav = navItems.filter((item) => item.roles.includes(activeRole));
+  const currentNav = navMenus[activeRole] || navMenus.Admin;
 
   return (
     <aside className="w-full lg:w-64 glass-panel border-r border-slate-800/80 shrink-0 p-4 flex flex-col justify-between lg:sticky lg:top-20 lg:h-[calc(100vh-6rem)] lg:overflow-y-auto rounded-2xl">
@@ -81,11 +71,11 @@ export const Navbar: React.FC = () => {
         {/* Nav list */}
         <div className="space-y-1">
           <p className="px-3 text-[10px] font-mono font-semibold uppercase tracking-wider text-slate-500 mb-2">
-            Navigation Menu
+            {activeRole} Route Menu
           </p>
-          {filteredNav.map((item) => {
+          {currentNav.map((item) => {
             const Icon = item.icon;
-            const isActive = pathname === item.path || (pathname === '/' && item.path === '/dashboard');
+            const isActive = pathname === item.path;
             return (
               <Link
                 key={item.path}
@@ -108,10 +98,10 @@ export const Navbar: React.FC = () => {
       <div className="mt-6 p-3 rounded-xl bg-gradient-to-br from-indigo-950/40 to-slate-900 border border-indigo-500/20">
         <div className="flex items-center space-x-2 text-indigo-400 mb-1">
           <Sparkles className="w-3.5 h-3.5" />
-          <span className="text-xs font-bold">RBAC Scope</span>
+          <span className="text-xs font-bold">Route Security</span>
         </div>
         <p className="text-[11px] text-slate-400 leading-snug">
-          Logged in as <strong className="text-white">{activeRole}</strong>. Route guard & API actions strictly enforced.
+          Namespaced route: <strong className="text-white font-mono text-[10px]">{pathname}</strong>. Route Guard active.
         </p>
       </div>
     </aside>

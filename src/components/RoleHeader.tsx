@@ -3,12 +3,14 @@
 import React, { useState } from 'react';
 import { useLMS } from '../context/LMSContext';
 import { UserRole } from '../types';
-import { ShieldCheck, UserCheck, BookOpen, GraduationCap, Info, Sparkles, Check, Lock, ChevronRight, X } from 'lucide-react';
+import { useRouter } from 'next/navigation';
+import { ShieldCheck, UserCheck, BookOpen, GraduationCap, Info, Sparkles, X } from 'lucide-react';
 
-const ROLES_INFO: { role: UserRole; title: string; badgeColor: string; icon: any; desc: string }[] = [
+const ROLES_INFO: { role: UserRole; title: string; defaultRoute: string; badgeColor: string; icon: any; desc: string }[] = [
   {
     role: 'Admin',
     title: 'System Administrator',
+    defaultRoute: '/admin/dashboard',
     badgeColor: 'bg-rose-500/20 text-rose-300 border-rose-500/30',
     icon: ShieldCheck,
     desc: 'Full platform management, user role promotion, system stats, & blog oversight.',
@@ -16,6 +18,7 @@ const ROLES_INFO: { role: UserRole; title: string; badgeColor: string; icon: any
   {
     role: 'Content Manager',
     title: 'Content Director',
+    defaultRoute: '/content-manager/dashboard',
     badgeColor: 'bg-amber-500/20 text-amber-300 border-amber-500/30',
     icon: BookOpen,
     desc: 'Platform-wide course/lesson authoring, blog draft & publishing workflow.',
@@ -23,6 +26,7 @@ const ROLES_INFO: { role: UserRole; title: string; badgeColor: string; icon: any
   {
     role: 'Instructor',
     title: 'Course Instructor',
+    defaultRoute: '/instructor/dashboard',
     badgeColor: 'bg-indigo-500/20 text-indigo-300 border-indigo-500/30',
     icon: UserCheck,
     desc: 'Manages owned courses, lessons, quizzes, & student roster progress.',
@@ -30,6 +34,7 @@ const ROLES_INFO: { role: UserRole; title: string; badgeColor: string; icon: any
   {
     role: 'Student',
     title: 'Enrolled Learner',
+    defaultRoute: '/student/dashboard',
     badgeColor: 'bg-emerald-500/20 text-emerald-300 border-emerald-500/30',
     icon: GraduationCap,
     desc: 'Discovers & enrolls in courses, sequential lesson player, auto-graded quizzes.',
@@ -39,6 +44,12 @@ const ROLES_INFO: { role: UserRole; title: string; badgeColor: string; icon: any
 export const RoleHeader: React.FC = () => {
   const { activeRole, switchRole, currentUser } = useLMS();
   const [showMatrix, setShowMatrix] = useState(false);
+  const router = useRouter();
+
+  const handleRoleChange = (targetRole: UserRole, targetRoute: string) => {
+    switchRole(targetRole);
+    router.push(targetRoute);
+  };
 
   return (
     <header className="sticky top-0 z-40 w-full glass-panel border-b border-slate-800/80 px-4 lg:px-8 py-3">
@@ -56,7 +67,7 @@ export const RoleHeader: React.FC = () => {
                 LearnHub <span className="gradient-text">LMS</span>
               </h1>
               <span className="px-2 py-0.5 text-[10px] font-mono font-semibold uppercase tracking-wider bg-indigo-500/10 text-indigo-400 border border-indigo-500/20 rounded-full">
-                Frontend Spec Demo
+                App Router Namespaced
               </span>
             </div>
             <p className="text-xs text-slate-400 flex items-center gap-1">
@@ -77,7 +88,7 @@ export const RoleHeader: React.FC = () => {
               return (
                 <button
                   key={r.role}
-                  onClick={() => switchRole(r.role)}
+                  onClick={() => handleRoleChange(r.role, r.defaultRoute)}
                   className={`flex items-center space-x-2 px-3 py-1.5 rounded-xl text-xs font-medium transition-all duration-200 ${
                     isActive
                       ? 'bg-gradient-to-r from-indigo-600 to-purple-600 text-white shadow-md shadow-indigo-500/30 scale-105'
@@ -127,10 +138,10 @@ export const RoleHeader: React.FC = () => {
                 <thead className="bg-slate-900/80 text-slate-400 uppercase font-mono border-b border-slate-800">
                   <tr>
                     <th className="px-4 py-3">Action</th>
-                    <th className="px-4 py-3 text-center">Admin</th>
-                    <th className="px-4 py-3 text-center">Content Manager</th>
-                    <th className="px-4 py-3 text-center">Instructor</th>
-                    <th className="px-4 py-3 text-center">Student</th>
+                    <th className="px-4 py-3 text-center">Admin (/admin/*)</th>
+                    <th className="px-4 py-3 text-center">Content Manager (/content-manager/*)</th>
+                    <th className="px-4 py-3 text-center">Instructor (/instructor/*)</th>
+                    <th className="px-4 py-3 text-center">Student (/student/*)</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-800/60">
