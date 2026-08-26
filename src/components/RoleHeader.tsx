@@ -5,7 +5,7 @@ import { useLMS } from '../context/LMSContext';
 import { UserRole } from '../types';
 import { useRouter } from 'next/navigation';
 import { BrandLogo } from './BrandLogo';
-import { ShieldCheck, UserCheck, BookOpen, GraduationCap, Info, X } from 'lucide-react';
+import { ShieldCheck, UserCheck, BookOpen, GraduationCap, Info, X, Menu } from 'lucide-react';
 
 const ROLES_INFO: { role: UserRole; title: string; defaultRoute: string; icon: any; desc: string }[] = [
   {
@@ -41,27 +41,29 @@ const ROLES_INFO: { role: UserRole; title: string; defaultRoute: string; icon: a
 export const RoleHeader: React.FC = () => {
   const { activeRole, switchRole } = useLMS();
   const [showMatrix, setShowMatrix] = useState(false);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const router = useRouter();
 
   const handleRoleChange = (targetRole: UserRole, targetRoute: string) => {
     switchRole(targetRole);
     router.push(targetRoute);
+    setMobileMenuOpen(false);
   };
 
   return (
     <header className="sticky top-0 z-40 w-full bg-[#141d2b] border-b border-slate-800/80 px-4 sm:px-6 lg:px-8 py-3">
-      <div className="max-w-[1440px] mx-auto flex flex-col md:flex-row items-center justify-between gap-4">
-        {/* Brand Logo Header featuring SVG Crest matching favicon */}
+      <div className="max-w-[1440px] mx-auto flex items-center justify-between gap-4">
+        {/* Brand Logo Header */}
         <div className="flex items-center space-x-3">
           <BrandLogo size="md" />
-          <span className="px-2 py-0.5 text-[10px] font-mono font-medium bg-[#1a2436] text-[#60a5fa] border border-slate-800 rounded-md">
+          <span className="hidden sm:inline-block px-2 py-0.5 text-[10px] font-mono font-medium bg-[#1a2436] text-[#60a5fa] border border-slate-800 rounded-md">
             LMS Platform
           </span>
         </div>
 
-        {/* Dynamic 4-Role Quick Switcher */}
-        <div className="flex items-center bg-[#1a2436] p-1.5 rounded-xl border border-slate-800">
-          <span className="text-xs font-medium text-slate-400 px-3 hidden xl:inline-block">
+        {/* Desktop 4-Role Quick Switcher */}
+        <div className="hidden md:flex items-center bg-[#1a2436] p-1.5 rounded-xl border border-slate-800">
+          <span className="text-xs font-medium text-slate-400 px-3 hidden lg:inline-block">
             Persona Switcher:
           </span>
           <div className="flex items-center space-x-1">
@@ -87,8 +89,8 @@ export const RoleHeader: React.FC = () => {
           </div>
         </div>
 
-        {/* Role Matrix Trigger */}
-        <div className="flex items-center gap-3">
+        {/* Right Actions & Mobile Hamburger */}
+        <div className="flex items-center gap-2">
           <button
             onClick={() => setShowMatrix(true)}
             className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium bg-[#1a2436] hover:bg-slate-800 text-slate-300 border border-slate-800 transition-colors"
@@ -96,17 +98,53 @@ export const RoleHeader: React.FC = () => {
             <Info className="w-4 h-4 text-[#3b82f6]" />
             <span className="hidden sm:inline">Permission Matrix</span>
           </button>
+
+          <button
+            onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+            className="md:hidden p-2 rounded-lg bg-[#1a2436] border border-slate-800 text-slate-300 hover:text-white"
+          >
+            {mobileMenuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
+          </button>
         </div>
       </div>
 
+      {/* Mobile Drawer Persona Switcher */}
+      {mobileMenuOpen && (
+        <div className="md:hidden pt-3 mt-3 border-t border-slate-800/80 animate-fadeIn space-y-2">
+          <span className="text-[10px] font-mono font-bold text-slate-400 uppercase tracking-wider block px-1">
+            Select Persona:
+          </span>
+          <div className="grid grid-cols-2 gap-2">
+            {ROLES_INFO.map((r) => {
+              const Icon = r.icon;
+              const isActive = activeRole === r.role;
+              return (
+                <button
+                  key={r.role}
+                  onClick={() => handleRoleChange(r.role, r.defaultRoute)}
+                  className={`flex items-center space-x-2 p-2.5 rounded-xl text-xs font-semibold border transition-all ${
+                    isActive
+                      ? 'bg-[#3b82f6] border-[#3b82f6] text-white'
+                      : 'bg-[#1a2436] border-slate-800 text-slate-300 hover:bg-slate-800'
+                  }`}
+                >
+                  <Icon className="w-4 h-4" />
+                  <span>{r.role}</span>
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
       {/* Permission Matrix Modal */}
       {showMatrix && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-fadeIn">
-          <div className="bg-[#141d2b] w-full max-w-4xl rounded-2xl border border-slate-700/80 shadow-2xl overflow-hidden p-6">
-            <div className="flex items-center justify-between pb-4 border-b border-slate-800">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/80 backdrop-blur-md animate-fadeIn">
+          <div className="bg-[#141d2b] w-full max-w-4xl max-h-[90vh] overflow-y-auto rounded-2xl border border-slate-700/80 shadow-2xl p-4 sm:p-6">
+            <div className="flex items-center justify-between pb-4 border-b border-slate-800 sticky top-0 bg-[#141d2b] z-10">
               <div className="flex items-center space-x-2">
                 <BrandLogo size="sm" showText={false} />
-                <h3 className="text-lg font-bold text-white">Strict 4-Role Access Matrix (Project Spec)</h3>
+                <h3 className="text-base sm:text-lg font-bold text-white">Strict 4-Role Access Matrix</h3>
               </div>
               <button
                 onClick={() => setShowMatrix(false)}
@@ -117,7 +155,7 @@ export const RoleHeader: React.FC = () => {
             </div>
 
             <div className="mt-4 overflow-x-auto">
-              <table className="w-full text-xs text-left text-slate-300">
+              <table className="w-full text-xs text-left text-slate-300 min-w-[500px]">
                 <thead className="bg-[#1a2436] text-slate-400 uppercase font-mono border-b border-slate-800">
                   <tr>
                     <th className="px-4 py-3">Action</th>

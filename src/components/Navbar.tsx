@@ -49,15 +49,15 @@ export const Navbar: React.FC = () => {
   const currentNav = navMenus[activeRole] || navMenus.Admin;
 
   return (
-    <aside className="w-full lg:w-60 bg-[#141d2b] border border-slate-800/80 shrink-0 p-5 flex flex-col justify-between lg:sticky lg:top-20 lg:h-[calc(100vh-6rem)] overflow-y-auto rounded-2xl z-30">
-      <div className="space-y-6">
-        {/* Brand Logo Header featuring SVG Crest matching favicon */}
-        <div className="px-1">
+    <aside className="w-full lg:w-60 bg-[#141d2b] border border-slate-800/80 shrink-0 p-4 sm:p-5 flex flex-col justify-between lg:sticky lg:top-20 lg:h-[calc(100vh-6rem)] overflow-y-auto rounded-2xl z-30">
+      <div className="space-y-4 lg:space-y-6">
+        {/* Brand Logo Header (hidden on mobile header layout) */}
+        <div className="hidden lg:block px-1">
           <BrandLogo size="md" />
         </div>
 
-        {/* Clean Menu Items */}
-        <div className="space-y-1">
+        {/* Navigation items (Responsive horizontal pills on mobile, vertical list on desktop) */}
+        <div className="flex lg:flex-col items-center lg:items-stretch overflow-x-auto lg:overflow-x-visible gap-1.5 pb-1 lg:pb-0">
           {currentNav.map((item) => {
             const Icon = item.icon;
             const isActive = pathname === item.path;
@@ -65,7 +65,7 @@ export const Navbar: React.FC = () => {
               <Link
                 key={item.path}
                 href={item.path}
-                className={`w-full flex items-center space-x-3 px-3 py-2.5 rounded-xl text-xs font-semibold border transition-all duration-150 ${
+                className={`flex items-center space-x-2.5 px-3 py-2 rounded-xl text-xs font-semibold border transition-all duration-150 shrink-0 lg:shrink ${
                   isActive
                     ? 'bg-[#3b82f6]/20 text-[#60a5fa] border-[#3b82f6]/40 shadow-sm'
                     : 'border-transparent text-slate-400 hover:text-slate-200 hover:bg-[#1a2436]'
@@ -77,7 +77,7 @@ export const Navbar: React.FC = () => {
             );
           })}
 
-          <div className="pt-2">
+          <div className="hidden lg:block pt-2">
             <button
               onClick={() => alert('Settings module active in SaaSPro LMS enterprise edition.')}
               className="w-full flex items-center space-x-3 px-3 py-2.5 rounded-xl text-xs font-semibold border border-transparent text-slate-400 hover:text-slate-200 hover:bg-[#1a2436] transition-all"
@@ -89,8 +89,8 @@ export const Navbar: React.FC = () => {
         </div>
       </div>
 
-      {/* Simplified User Card at Bottom */}
-      <div className="pt-4 border-t border-slate-800/80 flex items-center space-x-3 px-1">
+      {/* Simplified User Card at Bottom (desktop only) */}
+      <div className="hidden lg:flex pt-4 border-t border-slate-800/80 items-center space-x-3 px-1">
         <img
           src={currentUser.avatar}
           alt={currentUser.name}
