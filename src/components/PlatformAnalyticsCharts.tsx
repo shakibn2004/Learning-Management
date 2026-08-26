@@ -1,11 +1,14 @@
 'use client';
 
 import React, { useState } from 'react';
+import { PieChart as PieIcon, BarChart3, Users } from 'lucide-react';
 
 export const PlatformAnalyticsCharts: React.FC = () => {
   const [hoveredPoint, setHoveredPoint] = useState<{ month: string; value: number } | null>(null);
+  const [activeChartTab, setActiveChartTab] = useState<'pie' | 'bar'>('pie');
+  const [hoveredSlice, setHoveredSlice] = useState<{ label: string; count: number; percentage: number; color: string } | null>(null);
 
-  // Revenue chart data matching 1st reference image
+  // Revenue chart data
   const revenueData = [
     { month: 'Jan', value: 62000 },
     { month: 'Feb', value: 74000 },
@@ -15,7 +18,7 @@ export const PlatformAnalyticsCharts: React.FC = () => {
     { month: 'Jun', value: 124580 },
   ];
 
-  // User growth bar chart matching 1st reference image
+  // User growth bar chart
   const userGrowthData = [
     { month: 'Jan', count: 1200 },
     { month: 'Feb', count: 1900 },
@@ -23,6 +26,14 @@ export const PlatformAnalyticsCharts: React.FC = () => {
     { month: 'Apr', count: 2100 },
     { month: 'May', count: 1780 },
     { month: 'Jun', count: 2400 },
+  ];
+
+  // Demographics Pie Chart Segments
+  const demographicsData = [
+    { label: 'Students', count: 5730, percentage: 68, color: '#34d399' },
+    { label: 'Instructors', count: 1510, percentage: 18, color: '#60a5fa' },
+    { label: 'Content Directors', count: 840, percentage: 10, color: '#fbbf24' },
+    { label: 'System Admins', count: 349, percentage: 4, color: '#c084fc' },
   ];
 
   const svgWidth = 560;
@@ -49,12 +60,19 @@ export const PlatformAnalyticsCharts: React.FC = () => {
     return `${acc} C ${cp1x} ${prevY}, ${cp2x} ${y}, ${x} ${y}`;
   }, '');
 
-  // Fill area under curve
   const fillPath = `${revenuePath} L ${getX(revenueData.length - 1)} ${svgHeight - paddingBottom} L ${getX(0)} ${svgHeight - paddingBottom} Z`;
+
+  // SVG Pie Chart Generator Helper
+  let cumulativePercent = 0;
+  const getCoordinatesForPercent = (percent: number) => {
+    const x = Math.cos(2 * Math.PI * percent);
+    const y = Math.sin(2 * Math.PI * percent);
+    return [x, y];
+  };
 
   return (
     <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-      {/* 1. Revenue Analytics Card (matching 1st reference image) */}
+      {/* 1. Revenue Analytics Card */}
       <div className="lg:col-span-7 bg-[#141d2b] p-6 rounded-2xl border border-slate-800/80 space-y-6">
         <div>
           <h3 className="text-lg font-bold text-white tracking-tight">Revenue Analytics</h3>
@@ -103,7 +121,6 @@ export const PlatformAnalyticsCharts: React.FC = () => {
               </linearGradient>
             </defs>
 
-            {/* Grid lines & Y-axis Labels */}
             {[140000, 120000, 100000, 80000, 60000].map((val) => {
               const y = getY(val);
               return (
@@ -116,13 +133,9 @@ export const PlatformAnalyticsCharts: React.FC = () => {
               );
             })}
 
-            {/* Gradient Fill */}
             <path d={fillPath} fill="url(#revenueGrad)" />
-
-            {/* Blue Curve */}
             <path d={revenuePath} fill="none" stroke="#3b82f6" strokeWidth="2.5" />
 
-            {/* Data Points */}
             {revenueData.map((d, i) => {
               const cx = getX(i);
               const cy = getY(d.value);
@@ -145,9 +158,8 @@ export const PlatformAnalyticsCharts: React.FC = () => {
           )}
         </div>
 
-        {/* Bottom Breakdown Section (2 columns matching 1st reference image) */}
+        {/* Bottom Breakdown Section */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-4 border-t border-slate-800/80 text-xs">
-          {/* Revenue by Source */}
           <div className="space-y-2">
             <h4 className="font-bold text-white text-xs">Revenue by Source</h4>
             <div className="space-y-2 text-slate-300">
@@ -170,7 +182,6 @@ export const PlatformAnalyticsCharts: React.FC = () => {
             </div>
           </div>
 
-          {/* Top Performing Courses */}
           <div className="space-y-2">
             <h4 className="font-bold text-white text-xs">Top Performing Products</h4>
             <div className="space-y-2 text-slate-300">
@@ -195,34 +206,148 @@ export const PlatformAnalyticsCharts: React.FC = () => {
         </div>
       </div>
 
-      {/* 2. User Growth Card (matching 1st reference image) */}
+      {/* 2. User Growth & Demographics Complex Card (Pie Chart + Bar Chart) */}
       <div className="lg:col-span-5 bg-[#141d2b] p-6 rounded-2xl border border-slate-800/80 flex flex-col justify-between space-y-6">
         <div>
-          <div className="flex items-center justify-between">
-            <h3 className="text-lg font-bold text-white tracking-tight">User Growth</h3>
-            <div className="flex items-center space-x-2 text-xs">
-              <span className="w-3 h-3 bg-[#a855f7] rounded-sm inline-block"></span>
-              <span className="text-slate-400 font-medium">New Users</span>
+          {/* Card Header & Toggle Switch */}
+          <div className="flex items-center justify-between pb-3 border-b border-slate-800/80">
+            <h3 className="text-base font-bold text-white tracking-tight flex items-center gap-2">
+              <Users className="w-4 h-4 text-purple-400" />
+              <span>User Demographics & Growth</span>
+            </h3>
+
+            {/* View Switcher Tabs */}
+            <div className="flex items-center bg-[#1a2436] p-1 rounded-xl border border-slate-800">
+              <button
+                onClick={() => setActiveChartTab('pie')}
+                className={`flex items-center space-x-1 px-2.5 py-1 rounded-lg text-xs font-semibold transition-all ${
+                  activeChartTab === 'pie' ? 'bg-[#3b82f6] text-white shadow-sm' : 'text-slate-400 hover:text-slate-200'
+                }`}
+              >
+                <PieIcon className="w-3.5 h-3.5" />
+                <span>Pie</span>
+              </button>
+              <button
+                onClick={() => setActiveChartTab('bar')}
+                className={`flex items-center space-x-1 px-2.5 py-1 rounded-lg text-xs font-semibold transition-all ${
+                  activeChartTab === 'bar' ? 'bg-[#3b82f6] text-white shadow-sm' : 'text-slate-400 hover:text-slate-200'
+                }`}
+              >
+                <BarChart3 className="w-3.5 h-3.5" />
+                <span>Bar</span>
+              </button>
             </div>
           </div>
 
-          {/* Purple Vertical Bar Chart */}
-          <div className="mt-8 flex items-end justify-between h-56 px-4 pt-4 border-b border-slate-800/80">
-            {userGrowthData.map((d) => {
-              const heightPct = (d.count / 2500) * 100;
-              return (
-                <div key={d.month} className="flex flex-col items-center gap-3 flex-1 group">
-                  <div className="w-10 sm:w-12 bg-[#8b5cf6] rounded-t-lg transition-all duration-300 group-hover:brightness-125" style={{ height: `${heightPct}%` }}></div>
-                  <span className="text-xs text-slate-400 font-medium">{d.month}</span>
+          {/* TAB 1: SVG Interactive Pie / Donut Chart */}
+          {activeChartTab === 'pie' ? (
+            <div className="mt-6 flex flex-col items-center space-y-6 animate-fadeIn">
+              <div className="relative w-48 h-48 flex items-center justify-center">
+                <svg viewBox="-1 -1 2 2" className="w-full h-full transform -rotate-90">
+                  {demographicsData.map((slice) => {
+                    const startPercent = cumulativePercent;
+                    cumulativePercent += slice.percentage / 100;
+                    const endPercent = cumulativePercent;
+
+                    const [startX, startY] = getCoordinatesForPercent(startPercent);
+                    const [endX, endY] = getCoordinatesForPercent(endPercent);
+
+                    const largeArcFlag = slice.percentage / 100 > 0.5 ? 1 : 0;
+
+                    const pathData = [
+                      `M ${startX} ${startY}`,
+                      `A 1 1 0 ${largeArcFlag} 1 ${endX} ${endY}`,
+                      `L 0 0`,
+                    ].join(' ');
+
+                    const isHovered = hoveredSlice?.label === slice.label;
+
+                    return (
+                      <path
+                        key={slice.label}
+                        d={pathData}
+                        fill={slice.color}
+                        onMouseEnter={() => setHoveredSlice(slice)}
+                        onMouseLeave={() => setHoveredSlice(null)}
+                        className="transition-all duration-300 cursor-pointer hover:opacity-90 hover:scale-105"
+                        style={{
+                          transformOrigin: '0 0',
+                          transform: isHovered ? 'scale(1.05)' : 'scale(1)',
+                        }}
+                      />
+                    );
+                  })}
+                  {/* Inner Hole for Donut Effect */}
+                  <circle cx="0" cy="0" r="0.6" fill="#141d2b" />
+                </svg>
+
+                {/* Center Callout */}
+                <div className="absolute inset-0 flex flex-col items-center justify-center text-center pointer-events-none">
+                  <span className="text-xl font-extrabold text-white">8,429</span>
+                  <span className="text-[10px] text-slate-400 font-medium">Total Users</span>
                 </div>
-              );
-            })}
-          </div>
+              </div>
+
+              {/* Pie Legend List */}
+              <div className="grid grid-cols-2 gap-3 w-full text-xs pt-2">
+                {demographicsData.map((item) => (
+                  <div
+                    key={item.label}
+                    onMouseEnter={() => setHoveredSlice(item)}
+                    onMouseLeave={() => setHoveredSlice(null)}
+                    className={`p-2.5 rounded-xl border transition-all cursor-pointer ${
+                      hoveredSlice?.label === item.label
+                        ? 'bg-[#1a2436] border-slate-700 shadow-md scale-102'
+                        : 'bg-[#1a2436]/60 border-slate-800/80'
+                    }`}
+                  >
+                    <div className="flex items-center space-x-2">
+                      <span className="w-2.5 h-2.5 rounded-full shrink-0" style={{ backgroundColor: item.color }}></span>
+                      <span className="text-slate-300 font-medium truncate">{item.label}</span>
+                    </div>
+                    <div className="mt-1 flex items-baseline justify-between pl-4">
+                      <span className="font-mono font-bold text-white">{item.count.toLocaleString()}</span>
+                      <span className="text-[10px] text-slate-400 font-mono">{item.percentage}%</span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          ) : (
+            /* TAB 2: Purple Bar Chart */
+            <div className="mt-6 space-y-4 animate-fadeIn">
+              <div className="flex items-center justify-between text-xs text-slate-400">
+                <span>Monthly Registration Trend</span>
+                <span className="text-purple-400 font-bold">+24% Growth</span>
+              </div>
+
+              <div className="flex items-end justify-between h-48 px-3 pt-4 border-b border-slate-800/80">
+                {userGrowthData.map((d) => {
+                  const heightPct = (d.count / 2500) * 100;
+                  return (
+                    <div key={d.month} className="flex flex-col items-center gap-2 flex-1 group">
+                      <div className="text-[10px] text-purple-300 font-mono opacity-0 group-hover:opacity-100 transition-opacity">
+                        {d.count}
+                      </div>
+                      <div className="w-8 sm:w-10 bg-[#1a2436] rounded-t-lg overflow-hidden flex items-end h-36 border border-slate-800">
+                        <div
+                          className="w-full bg-[#8b5cf6] rounded-t-lg group-hover:bg-purple-500 transition-all duration-300"
+                          style={{ height: `${heightPct}%` }}
+                        ></div>
+                      </div>
+                      <span className="text-xs text-slate-400 font-medium">{d.month}</span>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          )}
         </div>
 
-        <div className="flex items-center justify-between text-xs text-slate-400 pt-2">
-          <span>Active User Metrics</span>
-          <span className="font-bold text-white font-mono">2,500 Max</span>
+        {/* Footer Summary */}
+        <div className="flex items-center justify-between text-xs text-slate-400 pt-3 border-t border-slate-800/80">
+          <span>{activeChartTab === 'pie' ? 'Role Distribution Breakdown' : 'Monthly Registrations'}</span>
+          <span className="font-bold text-white font-mono">8,429 Active</span>
         </div>
       </div>
     </div>
