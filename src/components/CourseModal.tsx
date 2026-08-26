@@ -3,7 +3,7 @@
 import React, { useState } from 'react';
 import { useLMS } from '../context/LMSContext';
 import { Course } from '../types';
-import { X, BookOpen, Sparkles } from 'lucide-react';
+import { X, BookOpen } from 'lucide-react';
 
 interface CourseModalProps {
   courseToEdit?: Course | null;
@@ -53,12 +53,12 @@ export const CourseModal: React.FC<CourseModalProps> = ({ courseToEdit, onClose 
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-fadeIn">
-      <div className="glass-panel w-full max-w-2xl rounded-2xl border border-slate-700/80 shadow-2xl p-6 overflow-y-auto max-h-[90vh]">
-        <div className="flex items-center justify-between pb-4 border-b border-slate-800">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/85 backdrop-blur-md animate-fadeIn">
+      <div className="bg-[#141d2b] w-full max-w-2xl rounded-2xl border border-slate-700/80 shadow-2xl p-4 sm:p-6 overflow-y-auto max-h-[90vh]">
+        <div className="flex items-center justify-between pb-4 border-b border-slate-800 sticky top-0 bg-[#141d2b] z-10">
           <div className="flex items-center space-x-2">
-            <BookOpen className="w-6 h-6 text-indigo-400" />
-            <h3 className="text-lg font-bold text-white">
+            <BookOpen className="w-5 h-5 text-[#3b82f6]" />
+            <h3 className="text-base sm:text-lg font-bold text-white">
               {courseToEdit ? 'Edit Course' : 'Create New Course'}
             </h3>
           </div>
@@ -76,7 +76,7 @@ export const CourseModal: React.FC<CourseModalProps> = ({ courseToEdit, onClose 
               value={title}
               onChange={(e) => setTitle(e.target.value)}
               placeholder="e.g. Next.js 14 Full Stack Development"
-              className="glass-input w-full px-3 py-2 rounded-xl text-sm"
+              className="bg-[#1a2436] w-full px-3.5 py-2.5 rounded-xl text-slate-200 border border-slate-800 focus:outline-none focus:border-[#3b82f6]"
             />
           </div>
 
@@ -87,7 +87,7 @@ export const CourseModal: React.FC<CourseModalProps> = ({ courseToEdit, onClose 
               value={subtitle}
               onChange={(e) => setSubtitle(e.target.value)}
               placeholder="e.g. Master App Router, React Server Components, and Headless Strapi CMS"
-              className="glass-input w-full px-3 py-2 rounded-xl"
+              className="bg-[#1a2436] w-full px-3.5 py-2.5 rounded-xl text-slate-200 border border-slate-800 focus:outline-none focus:border-[#3b82f6]"
             />
           </div>
 
@@ -97,7 +97,7 @@ export const CourseModal: React.FC<CourseModalProps> = ({ courseToEdit, onClose 
               <select
                 value={category}
                 onChange={(e) => setCategory(e.target.value)}
-                className="glass-input w-full px-3 py-2 rounded-xl bg-slate-900 text-slate-200"
+                className="bg-[#1a2436] w-full px-3.5 py-2.5 rounded-xl text-slate-200 border border-slate-800 focus:outline-none focus:border-[#3b82f6]"
               >
                 <option value="Web Development">Web Development</option>
                 <option value="Design & UI/UX">Design & UI/UX</option>
@@ -111,7 +111,7 @@ export const CourseModal: React.FC<CourseModalProps> = ({ courseToEdit, onClose 
               <select
                 value={level}
                 onChange={(e) => setLevel(e.target.value as any)}
-                className="glass-input w-full px-3 py-2 rounded-xl bg-slate-900 text-slate-200"
+                className="bg-[#1a2436] w-full px-3.5 py-2.5 rounded-xl text-slate-200 border border-slate-800 focus:outline-none focus:border-[#3b82f6]"
               >
                 <option value="Beginner">Beginner</option>
                 <option value="Intermediate">Intermediate</option>
@@ -127,7 +127,7 @@ export const CourseModal: React.FC<CourseModalProps> = ({ courseToEdit, onClose 
                 min="0"
                 value={price}
                 onChange={(e) => setPrice(parseFloat(e.target.value) || 0)}
-                className="glass-input w-full px-3 py-2 rounded-xl"
+                className="bg-[#1a2436] w-full px-3.5 py-2.5 rounded-xl text-slate-200 border border-slate-800 focus:outline-none focus:border-[#3b82f6]"
               />
             </div>
           </div>
@@ -138,7 +138,7 @@ export const CourseModal: React.FC<CourseModalProps> = ({ courseToEdit, onClose 
               type="url"
               value={coverImage}
               onChange={(e) => setCoverImage(e.target.value)}
-              className="glass-input w-full px-3 py-2 rounded-xl text-slate-300 font-mono text-[11px]"
+              className="bg-[#1a2436] w-full px-3.5 py-2.5 rounded-xl text-slate-200 border border-slate-800 font-mono text-[11px] focus:outline-none focus:border-[#3b82f6]"
             />
           </div>
 
@@ -150,7 +150,7 @@ export const CourseModal: React.FC<CourseModalProps> = ({ courseToEdit, onClose 
               value={description}
               onChange={(e) => setDescription(e.target.value)}
               placeholder="Comprehensive description of syllabus, prerequisites, and learning outcomes..."
-              className="glass-input w-full px-3 py-2 rounded-xl"
+              className="bg-[#1a2436] w-full px-3.5 py-2.5 rounded-xl text-slate-200 border border-slate-800 focus:outline-none focus:border-[#3b82f6]"
             />
           </div>
 
@@ -160,7 +160,7 @@ export const CourseModal: React.FC<CourseModalProps> = ({ courseToEdit, onClose 
               id="pubCheck"
               checked={published}
               onChange={(e) => setPublished(e.target.checked)}
-              className="rounded bg-slate-900 border-slate-700 text-indigo-600 focus:ring-indigo-500 w-4 h-4"
+              className="rounded bg-[#1a2436] border-slate-700 text-[#3b82f6] focus:ring-[#3b82f6] w-4 h-4 cursor-pointer"
             />
             <label htmlFor="pubCheck" className="text-slate-300 text-xs font-semibold cursor-pointer">
               Publish Course Immediately (Visible to Students)
@@ -171,13 +171,13 @@ export const CourseModal: React.FC<CourseModalProps> = ({ courseToEdit, onClose 
             <button
               type="button"
               onClick={onClose}
-              className="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-xl font-semibold text-xs"
+              className="px-4 py-2 bg-[#1a2436] hover:bg-slate-800 text-slate-300 rounded-xl font-semibold text-xs border border-slate-800"
             >
               Cancel
             </button>
             <button
               type="submit"
-              className="px-5 py-2 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl font-semibold text-xs shadow-lg shadow-indigo-500/20"
+              className="px-5 py-2 bg-[#3b82f6] hover:bg-blue-600 text-white rounded-xl font-semibold text-xs shadow-md shadow-blue-500/20"
             >
               {courseToEdit ? 'Save Changes' : 'Create Course'}
             </button>

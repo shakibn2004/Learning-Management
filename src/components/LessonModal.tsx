@@ -3,7 +3,7 @@
 import React, { useState } from 'react';
 import { useLMS } from '../context/LMSContext';
 import { Lesson } from '../types';
-import { X, Video, FileText, PlusCircle } from 'lucide-react';
+import { X, PlusCircle } from 'lucide-react';
 
 interface LessonModalProps {
   courseId: string;
@@ -43,12 +43,12 @@ export const LessonModal: React.FC<LessonModalProps> = ({ courseId, lessonToEdit
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-fadeIn">
-      <div className="glass-panel w-full max-w-xl rounded-2xl border border-slate-700/80 shadow-2xl p-6 overflow-y-auto max-h-[90vh]">
-        <div className="flex items-center justify-between pb-4 border-b border-slate-800">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/85 backdrop-blur-md animate-fadeIn">
+      <div className="bg-[#141d2b] w-full max-w-xl rounded-2xl border border-slate-700/80 shadow-2xl p-4 sm:p-6 overflow-y-auto max-h-[90vh]">
+        <div className="flex items-center justify-between pb-4 border-b border-slate-800 sticky top-0 bg-[#141d2b] z-10">
           <div className="flex items-center space-x-2">
-            <PlusCircle className="w-6 h-6 text-indigo-400" />
-            <h3 className="text-lg font-bold text-white">
+            <PlusCircle className="w-5 h-5 text-[#3b82f6]" />
+            <h3 className="text-base sm:text-lg font-bold text-white">
               {lessonToEdit ? 'Edit Lesson' : 'Add Lesson to Course'}
             </h3>
           </div>
@@ -66,17 +66,17 @@ export const LessonModal: React.FC<LessonModalProps> = ({ courseId, lessonToEdit
               value={title}
               onChange={(e) => setTitle(e.target.value)}
               placeholder="e.g. 1. Introduction to Next.js App Router"
-              className="glass-input w-full px-3 py-2 rounded-xl text-sm"
+              className="bg-[#1a2436] w-full px-3.5 py-2.5 rounded-xl text-slate-200 border border-slate-800 focus:outline-none focus:border-[#3b82f6]"
             />
           </div>
 
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div>
-              <label className="block text-slate-300 font-semibold mb-1">Lesson Content Type</label>
+              <label className="block text-slate-300 font-semibold mb-1">Content Type</label>
               <select
                 value={type}
                 onChange={(e) => setType(e.target.value as any)}
-                className="glass-input w-full px-3 py-2 rounded-xl bg-slate-900 text-slate-200"
+                className="bg-[#1a2436] w-full px-3.5 py-2.5 rounded-xl text-slate-200 border border-slate-800 focus:outline-none focus:border-[#3b82f6]"
               >
                 <option value="video">Video Lesson</option>
                 <option value="text">Text / Markdown Article</option>
@@ -90,7 +90,7 @@ export const LessonModal: React.FC<LessonModalProps> = ({ courseId, lessonToEdit
                 min="1"
                 value={durationMinutes}
                 onChange={(e) => setDurationMinutes(parseInt(e.target.value) || 1)}
-                className="glass-input w-full px-3 py-2 rounded-xl"
+                className="bg-[#1a2436] w-full px-3.5 py-2.5 rounded-xl text-slate-200 border border-slate-800 focus:outline-none focus:border-[#3b82f6]"
               />
             </div>
           </div>
@@ -103,20 +103,19 @@ export const LessonModal: React.FC<LessonModalProps> = ({ courseId, lessonToEdit
                 value={videoUrl}
                 onChange={(e) => setVideoUrl(e.target.value)}
                 placeholder="https://www.youtube.com/embed/..."
-                className="glass-input w-full px-3 py-2 rounded-xl text-slate-300 font-mono text-[11px]"
+                className="bg-[#1a2436] w-full px-3.5 py-2.5 rounded-xl text-slate-200 border border-slate-800 font-mono text-[11px] focus:outline-none focus:border-[#3b82f6]"
               />
-              <p className="text-[10px] text-slate-500 mt-1">Supports YouTube embed URLs or HTML5 MP4 links.</p>
             </div>
           )}
 
           <div>
-            <label className="block text-slate-300 font-semibold mb-1">Lesson Content / Notes (Markdown Supported)</label>
+            <label className="block text-slate-300 font-semibold mb-1">Lesson Content / Notes</label>
             <textarea
               rows={5}
               value={content}
               onChange={(e) => setContent(e.target.value)}
               placeholder="Detailed lesson transcript, code snippets, or reading material..."
-              className="glass-input w-full px-3 py-2 rounded-xl font-mono text-xs"
+              className="bg-[#1a2436] w-full px-3.5 py-2.5 rounded-xl text-slate-200 border border-slate-800 font-mono text-xs focus:outline-none focus:border-[#3b82f6]"
             />
           </div>
 
@@ -124,13 +123,13 @@ export const LessonModal: React.FC<LessonModalProps> = ({ courseId, lessonToEdit
             <button
               type="button"
               onClick={onClose}
-              className="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-xl font-semibold text-xs"
+              className="px-4 py-2 bg-[#1a2436] hover:bg-slate-800 text-slate-300 rounded-xl font-semibold text-xs border border-slate-800"
             >
               Cancel
             </button>
             <button
               type="submit"
-              className="px-5 py-2 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl font-semibold text-xs shadow-lg shadow-indigo-500/20"
+              className="px-5 py-2 bg-[#3b82f6] hover:bg-blue-600 text-white rounded-xl font-semibold text-xs shadow-md shadow-blue-500/20"
             >
               {lessonToEdit ? 'Save Changes' : 'Add Lesson'}
             </button>

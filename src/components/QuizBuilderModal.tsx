@@ -3,7 +3,7 @@
 import React, { useState } from 'react';
 import { useLMS } from '../context/LMSContext';
 import { Quiz, QuizQuestion } from '../types';
-import { X, HelpCircle, Plus, Trash2, CheckCircle2 } from 'lucide-react';
+import { X, HelpCircle, Plus, Trash2 } from 'lucide-react';
 
 interface QuizBuilderModalProps {
   courseId: string;
@@ -113,19 +113,19 @@ export const QuizBuilderModal: React.FC<QuizBuilderModalProps> = ({ courseId, on
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-fadeIn">
-      <div className="glass-panel w-full max-w-3xl rounded-2xl border border-slate-700/80 shadow-2xl p-6 overflow-y-auto max-h-[90vh]">
-        <div className="flex items-center justify-between pb-4 border-b border-slate-800">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/85 backdrop-blur-md animate-fadeIn">
+      <div className="bg-[#141d2b] w-full max-w-3xl rounded-2xl border border-slate-700/80 shadow-2xl p-4 sm:p-6 overflow-y-auto max-h-[90vh]">
+        <div className="flex items-center justify-between pb-4 border-b border-slate-800 sticky top-0 bg-[#141d2b] z-10">
           <div className="flex items-center space-x-2">
-            <HelpCircle className="w-6 h-6 text-purple-400" />
-            <h3 className="text-lg font-bold text-white">Quiz Builder & Auto-Grader Configuration</h3>
+            <HelpCircle className="w-5 h-5 text-[#c084fc]" />
+            <h3 className="text-base sm:text-lg font-bold text-white">Quiz Builder & Auto-Grader Configuration</h3>
           </div>
           <button onClick={onClose} className="p-1 rounded-lg hover:bg-slate-800 text-slate-400 hover:text-white">
             <X className="w-5 h-5" />
           </button>
         </div>
 
-        <form onSubmit={handleSubmit} className="mt-6 space-y-6 text-xs">
+        <form onSubmit={handleSubmit} className="mt-6 space-y-5 text-xs">
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
             <div className="sm:col-span-2">
               <label className="block text-slate-300 font-semibold mb-1">Quiz Title *</label>
@@ -134,7 +134,7 @@ export const QuizBuilderModal: React.FC<QuizBuilderModalProps> = ({ courseId, on
                 required
                 value={title}
                 onChange={(e) => setTitle(e.target.value)}
-                className="glass-input w-full px-3 py-2 rounded-xl text-sm"
+                className="bg-[#1a2436] w-full px-3.5 py-2.5 rounded-xl text-slate-200 border border-slate-800 focus:outline-none focus:border-[#3b82f6]"
               />
             </div>
             <div>
@@ -145,7 +145,7 @@ export const QuizBuilderModal: React.FC<QuizBuilderModalProps> = ({ courseId, on
                 max="100"
                 value={passingScore}
                 onChange={(e) => setPassingScore(parseInt(e.target.value) || 70)}
-                className="glass-input w-full px-3 py-2 rounded-xl"
+                className="bg-[#1a2436] w-full px-3.5 py-2.5 rounded-xl text-slate-200 border border-slate-800 focus:outline-none focus:border-[#3b82f6]"
               />
             </div>
           </div>
@@ -156,18 +156,18 @@ export const QuizBuilderModal: React.FC<QuizBuilderModalProps> = ({ courseId, on
               type="text"
               value={description}
               onChange={(e) => setDescription(e.target.value)}
-              className="glass-input w-full px-3 py-2 rounded-xl"
+              className="bg-[#1a2436] w-full px-3.5 py-2.5 rounded-xl text-slate-200 border border-slate-800 focus:outline-none focus:border-[#3b82f6]"
             />
           </div>
 
           {/* Questions list */}
           <div className="space-y-4 pt-2">
             <div className="flex items-center justify-between">
-              <h4 className="text-sm font-bold text-white">Multiple Choice Questions ({questions.length})</h4>
+              <h4 className="text-xs sm:text-sm font-bold text-white">Multiple Choice Questions ({questions.length})</h4>
               <button
                 type="button"
                 onClick={addQuestion}
-                className="flex items-center space-x-1 text-xs font-semibold text-indigo-400 hover:text-indigo-300"
+                className="flex items-center space-x-1 text-xs font-semibold text-[#60a5fa] hover:text-blue-300"
               >
                 <Plus className="w-4 h-4" />
                 <span>Add Question</span>
@@ -175,16 +175,16 @@ export const QuizBuilderModal: React.FC<QuizBuilderModalProps> = ({ courseId, on
             </div>
 
             {questions.map((q, qIndex) => (
-              <div key={q.id} className="p-4 bg-slate-900/80 rounded-xl border border-slate-800 space-y-3">
+              <div key={q.id} className="p-4 bg-[#1a2436] rounded-xl border border-slate-800 space-y-3">
                 <div className="flex items-center justify-between gap-2">
-                  <span className="font-mono text-[11px] font-bold text-indigo-400">Q{qIndex + 1}</span>
+                  <span className="font-mono text-[11px] font-bold text-[#60a5fa]">Q{qIndex + 1}</span>
                   <input
                     type="text"
                     required
                     value={q.question}
                     onChange={(e) => updateQuestionText(q.id, e.target.value)}
                     placeholder="Enter question prompt..."
-                    className="glass-input text-xs w-full px-3 py-1.5 rounded-lg"
+                    className="bg-[#0f172a] text-xs w-full px-3 py-1.5 rounded-lg text-slate-200 border border-slate-800 focus:outline-none focus:border-[#3b82f6]"
                   />
                   <button
                     type="button"
@@ -196,7 +196,7 @@ export const QuizBuilderModal: React.FC<QuizBuilderModalProps> = ({ courseId, on
                 </div>
 
                 {/* Options */}
-                <div className="space-y-2 pl-4 border-l-2 border-indigo-500/30">
+                <div className="space-y-2 pl-4 border-l-2 border-[#3b82f6]/40">
                   <span className="text-[10px] text-slate-400 font-mono">Options (Select radio for correct answer):</span>
                   {q.options.map((opt) => (
                     <div key={opt.id} className="flex items-center space-x-2">
@@ -205,14 +205,14 @@ export const QuizBuilderModal: React.FC<QuizBuilderModalProps> = ({ courseId, on
                         name={`correct-${q.id}`}
                         checked={q.correctOptionId === opt.id}
                         onChange={() => setCorrectOption(q.id, opt.id)}
-                        className="text-indigo-600 focus:ring-indigo-500"
+                        className="text-[#3b82f6] focus:ring-[#3b82f6]"
                       />
                       <input
                         type="text"
                         required
                         value={opt.text}
                         onChange={(e) => updateOptionText(q.id, opt.id, e.target.value)}
-                        className="glass-input text-xs w-full px-2.5 py-1 rounded-lg"
+                        className="bg-[#0f172a] text-xs w-full px-2.5 py-1 rounded-lg text-slate-200 border border-slate-800 focus:outline-none focus:border-[#3b82f6]"
                       />
                     </div>
                   ))}
@@ -232,7 +232,7 @@ export const QuizBuilderModal: React.FC<QuizBuilderModalProps> = ({ courseId, on
                     value={q.explanation}
                     onChange={(e) => updateExplanation(q.id, e.target.value)}
                     placeholder="Auto-grading explanation for correct answer..."
-                    className="glass-input text-[11px] w-full px-3 py-1 rounded-lg italic text-slate-400"
+                    className="bg-[#0f172a] text-[11px] w-full px-3 py-1.5 rounded-lg italic text-slate-400 border border-slate-800 focus:outline-none focus:border-[#3b82f6]"
                   />
                 </div>
               </div>
@@ -243,13 +243,13 @@ export const QuizBuilderModal: React.FC<QuizBuilderModalProps> = ({ courseId, on
             <button
               type="button"
               onClick={onClose}
-              className="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-xl font-semibold text-xs"
+              className="px-4 py-2 bg-[#1a2436] hover:bg-slate-800 text-slate-300 rounded-xl font-semibold text-xs border border-slate-800"
             >
               Cancel
             </button>
             <button
               type="submit"
-              className="px-5 py-2 bg-purple-600 hover:bg-purple-500 text-white rounded-xl font-semibold text-xs shadow-lg shadow-purple-500/20"
+              className="px-5 py-2 bg-[#3b82f6] hover:bg-blue-600 text-white rounded-xl font-semibold text-xs shadow-md shadow-blue-500/20"
             >
               Save Quiz Config
             </button>
