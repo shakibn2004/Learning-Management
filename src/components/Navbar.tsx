@@ -12,7 +12,6 @@ import {
   GraduationCap,
   Users,
   Settings,
-  Layers,
 } from 'lucide-react';
 
 export const Navbar: React.FC = () => {
@@ -49,7 +48,7 @@ export const Navbar: React.FC = () => {
   const currentNav = navMenus[activeRole] || navMenus.Admin;
 
   return (
-    <aside className="w-full lg:w-60 bg-[#141d2b] border-r border-slate-800/80 shrink-0 p-5 flex flex-col justify-between lg:sticky lg:top-16 lg:h-[calc(100vh-4rem)] lg:overflow-y-auto rounded-2xl">
+    <aside className="w-full lg:w-60 bg-[#141d2b] border border-slate-800/80 shrink-0 p-5 flex flex-col justify-between lg:sticky lg:top-20 lg:h-[calc(100vh-6rem)] overflow-y-auto rounded-2xl z-30">
       <div className="space-y-6">
         {/* Brand Logo Header matching 1st reference image */}
         <div className="flex items-center space-x-3 px-2">
