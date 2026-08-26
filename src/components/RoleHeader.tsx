@@ -52,34 +52,34 @@ export const RoleHeader: React.FC = () => {
   };
 
   return (
-    <header className="sticky top-0 z-40 w-full glass-panel border-b border-slate-800/80 px-4 lg:px-8 py-3">
-      <div className="max-w-7xl mx-auto flex flex-col md:flex-row items-center justify-between gap-4">
+    <header className="sticky top-0 z-40 w-full glass-panel border-b border-slate-800/60 px-4 sm:px-6 lg:px-8 py-3.5 backdrop-blur-xl">
+      <div className="max-w-[1440px] mx-auto flex flex-col md:flex-row items-center justify-between gap-4">
         {/* Brand & Badge */}
         <div className="flex items-center space-x-3">
-          <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-indigo-600 via-purple-600 to-pink-500 p-0.5 shadow-lg shadow-indigo-500/20 flex items-center justify-center">
-            <div className="w-full h-full bg-slate-950 rounded-[10px] flex items-center justify-center">
-              <Sparkles className="w-5 h-5 text-indigo-400" />
-            </div>
+          <div className="w-10 h-10 rounded-2xl bg-indigo-600/20 border border-indigo-500/30 flex items-center justify-center shadow-lg shadow-indigo-500/10">
+            <Sparkles className="w-5 h-5 text-indigo-400" />
           </div>
           <div>
             <div className="flex items-center gap-2">
-              <h1 className="text-xl font-bold text-white tracking-tight">
-                LearnHub <span className="gradient-text">LMS</span>
+              <h1 className="text-lg font-bold text-white tracking-tight">
+                LearnHub <span className="gradient-text font-extrabold">LMS</span>
               </h1>
-              <span className="px-2 py-0.5 text-[10px] font-mono font-semibold uppercase tracking-wider bg-indigo-500/10 text-indigo-400 border border-indigo-500/20 rounded-full">
-                App Router Namespaced
+              <span className="px-2.5 py-0.5 text-[10px] font-mono font-medium tracking-wide bg-indigo-500/10 text-indigo-300 border border-indigo-500/20 rounded-full">
+                App Router
               </span>
             </div>
-            <p className="text-xs text-slate-400 flex items-center gap-1">
-              Active User: <span className="text-slate-200 font-medium">{currentUser.name}</span> ({currentUser.email})
+            <p className="text-xs text-slate-400 flex items-center gap-1.5 mt-0.5">
+              Active User: <strong className="text-slate-200 font-medium">{currentUser.name}</strong>
+              <span className="text-slate-600">•</span>
+              <span className="text-slate-400 font-mono text-[11px]">{currentUser.email}</span>
             </p>
           </div>
         </div>
 
         {/* Dynamic 4-Role Quick Switcher */}
-        <div className="flex items-center bg-slate-900/90 p-1.5 rounded-2xl border border-slate-800 shadow-inner">
-          <span className="text-xs font-semibold text-slate-400 px-3 hidden xl:inline-block">
-            Switch Persona:
+        <div className="flex items-center bg-slate-900/80 p-1.5 rounded-2xl border border-slate-800/80">
+          <span className="text-xs font-medium text-slate-400 px-3 hidden xl:inline-block">
+            Persona:
           </span>
           <div className="flex items-center space-x-1">
             {ROLES_INFO.map((r) => {
@@ -89,10 +89,10 @@ export const RoleHeader: React.FC = () => {
                 <button
                   key={r.role}
                   onClick={() => handleRoleChange(r.role, r.defaultRoute)}
-                  className={`flex items-center space-x-2 px-3 py-1.5 rounded-xl text-xs font-medium transition-all duration-200 ${
+                  className={`flex items-center space-x-2 px-3 py-1.5 rounded-xl text-xs font-medium border transition-all duration-200 ${
                     isActive
-                      ? 'bg-gradient-to-r from-indigo-600 to-purple-600 text-white shadow-md shadow-indigo-500/30 scale-105'
-                      : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/60'
+                      ? 'bg-indigo-600/90 border-indigo-500/50 text-white shadow-md shadow-indigo-500/20'
+                      : 'border-transparent text-slate-400 hover:text-slate-200 hover:bg-slate-800/50'
                   }`}
                   title={r.desc}
                 >
@@ -108,7 +108,7 @@ export const RoleHeader: React.FC = () => {
         <div className="flex items-center gap-3">
           <button
             onClick={() => setShowMatrix(true)}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-medium bg-slate-800/80 hover:bg-slate-800 text-indigo-300 border border-indigo-500/30 transition-colors"
+            className="flex items-center gap-2 px-3.5 py-1.5 rounded-xl text-xs font-medium bg-slate-800/60 hover:bg-slate-800 text-indigo-300 border border-indigo-500/20 transition-colors"
           >
             <Info className="w-4 h-4 text-indigo-400" />
             <span className="hidden sm:inline">Permission Matrix</span>
@@ -118,8 +118,8 @@ export const RoleHeader: React.FC = () => {
 
       {/* Permission Matrix Modal */}
       {showMatrix && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-md animate-fadeIn">
-          <div className="glass-panel w-full max-w-4xl rounded-2xl border border-slate-700/80 shadow-2xl overflow-hidden p-6">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-fadeIn">
+          <div className="glass-panel w-full max-w-4xl rounded-3xl border border-slate-700/80 shadow-2xl overflow-hidden p-6">
             <div className="flex items-center justify-between pb-4 border-b border-slate-800">
               <div className="flex items-center space-x-2">
                 <ShieldCheck className="w-6 h-6 text-indigo-400" />
