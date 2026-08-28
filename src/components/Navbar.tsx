@@ -13,51 +13,56 @@ import {
   GraduationCap,
   Users,
   Settings,
+  Sparkles,
 } from 'lucide-react';
 
 export const Navbar: React.FC = () => {
   const { activeRole, currentUser } = useLMS();
   const pathname = usePathname();
 
-  // Role-namespaced navigation menus matching 1st reference image structure
+  // Role-namespaced navigation menus with clear, vibrant labels
   const navMenus = {
     Admin: [
-      { path: '/admin/dashboard', label: 'Dashboard', icon: LayoutDashboard },
-      { path: '/admin/users', label: 'Team', icon: Users },
-      { path: '/admin/courses', label: 'Projects', icon: BookOpen },
-      { path: '/admin/blogs', label: 'Analytics', icon: Newspaper },
+      { path: '/admin/dashboard', label: 'Overview', icon: LayoutDashboard },
+      { path: '/admin/users', label: 'Users & Roles', icon: Users },
+      { path: '/admin/courses', label: 'Courses & Modules', icon: BookOpen },
+      { path: '/admin/blogs', label: 'Publications', icon: Newspaper },
     ],
     'Content Manager': [
-      { path: '/content-manager/dashboard', label: 'Dashboard', icon: LayoutDashboard },
-      { path: '/content-manager/courses', label: 'Projects', icon: BookOpen },
-      { path: '/content-manager/gradebook', label: 'Analytics', icon: Award },
-      { path: '/content-manager/blogs', label: 'Editorial', icon: Newspaper },
+      { path: '/content-manager/dashboard', label: 'Overview', icon: LayoutDashboard },
+      { path: '/content-manager/courses', label: 'Course Authoring', icon: BookOpen },
+      { path: '/content-manager/gradebook', label: 'Student Gradebook', icon: Award },
+      { path: '/content-manager/blogs', label: 'Blog Articles', icon: Newspaper },
     ],
     Instructor: [
-      { path: '/instructor/dashboard', label: 'Dashboard', icon: LayoutDashboard },
-      { path: '/instructor/courses', label: 'Projects', icon: BookOpen },
-      { path: '/instructor/gradebook', label: 'Analytics', icon: Award },
+      { path: '/instructor/dashboard', label: 'Overview', icon: LayoutDashboard },
+      { path: '/instructor/courses', label: 'My Courses', icon: BookOpen },
+      { path: '/instructor/gradebook', label: 'Student Roster', icon: Award },
     ],
     Student: [
-      { path: '/student/dashboard', label: 'Dashboard', icon: LayoutDashboard },
-      { path: '/student/catalog', label: 'Projects', icon: BookOpen },
-      { path: '/student/my-courses', label: 'My Courses', icon: GraduationCap },
-      { path: '/student/blogs', label: 'Articles', icon: Newspaper },
+      { path: '/student/dashboard', label: 'Overview', icon: LayoutDashboard },
+      { path: '/student/catalog', label: 'Course Catalog', icon: BookOpen },
+      { path: '/student/my-courses', label: 'My Learning', icon: GraduationCap },
+      { path: '/student/blogs', label: 'Articles & Tips', icon: Newspaper },
     ],
   };
 
   const currentNav = navMenus[activeRole] || navMenus.Admin;
 
   return (
-    <aside className="w-full lg:w-60 bg-[#141d2b] border border-slate-800/80 shrink-0 p-4 sm:p-5 flex flex-col justify-between lg:sticky lg:top-20 lg:h-[calc(100vh-6rem)] overflow-y-auto rounded-2xl z-30">
+    <aside className="w-full lg:w-64 bg-[#141d2b] border border-slate-800/80 shrink-0 p-4 sm:p-5 flex flex-col justify-between lg:sticky lg:top-20 lg:h-[calc(100vh-6rem)] overflow-y-auto rounded-2xl z-30 shadow-lg shadow-black/20">
       <div className="space-y-4 lg:space-y-6">
-        {/* Brand Logo Header (hidden on mobile header layout) */}
-        <div className="hidden lg:block px-1">
+        {/* Brand Logo Header */}
+        <div className="hidden lg:block px-1 pb-2 border-b border-slate-800/80">
           <BrandLogo size="md" />
         </div>
 
-        {/* Navigation items (Responsive horizontal pills on mobile, vertical list on desktop) */}
-        <div className="flex lg:flex-col items-center lg:items-stretch overflow-x-auto lg:overflow-x-visible gap-1.5 pb-1 lg:pb-0">
+        {/* Navigation items */}
+        <div className="flex lg:flex-col items-center lg:items-stretch overflow-x-auto lg:overflow-x-visible gap-1.5 pb-1 lg:pb-0 scrollbar-none">
+          <span className="hidden lg:block text-[10px] font-bold uppercase tracking-wider text-slate-500 px-3 pb-1">
+            Navigation Menu
+          </span>
+
           {currentNav.map((item) => {
             const Icon = item.icon;
             const isActive = pathname === item.path;
@@ -65,40 +70,43 @@ export const Navbar: React.FC = () => {
               <Link
                 key={item.path}
                 href={item.path}
-                className={`flex items-center space-x-2.5 px-3 py-2 rounded-xl text-xs font-semibold border transition-all duration-150 shrink-0 lg:shrink ${
+                className={`flex items-center space-x-3 px-3.5 py-2.5 rounded-xl text-xs font-bold border transition-all duration-200 shrink-0 lg:shrink group ${
                   isActive
-                    ? 'bg-[#3b82f6]/20 text-[#60a5fa] border-[#3b82f6]/40 shadow-sm'
-                    : 'border-transparent text-slate-400 hover:text-slate-200 hover:bg-[#1a2436]'
+                    ? 'bg-gradient-to-r from-[#3b82f6]/20 to-blue-500/10 text-[#60a5fa] border-[#3b82f6]/40 shadow-sm shadow-blue-500/10'
+                    : 'border-transparent text-slate-400 hover:text-white hover:bg-[#1a2436]'
                 }`}
               >
-                <Icon className={`w-4 h-4 ${isActive ? 'text-[#3b82f6]' : 'text-slate-400'}`} />
+                <div
+                  className={`w-7 h-7 rounded-lg flex items-center justify-center transition-colors ${
+                    isActive
+                      ? 'bg-[#3b82f6] text-white shadow-sm shadow-blue-500/30'
+                      : 'bg-[#1a2436] text-slate-400 group-hover:text-white group-hover:bg-slate-700'
+                  }`}
+                >
+                  <Icon className="w-3.5 h-3.5" />
+                </div>
                 <span>{item.label}</span>
               </Link>
             );
           })}
-
-          <div className="hidden lg:block pt-2">
-            <button
-              onClick={() => alert('Settings module active in SaaSPro LMS enterprise edition.')}
-              className="w-full flex items-center space-x-3 px-3 py-2.5 rounded-xl text-xs font-semibold border border-transparent text-slate-400 hover:text-slate-200 hover:bg-[#1a2436] transition-all"
-            >
-              <Settings className="w-4 h-4 text-slate-400" />
-              <span>Settings</span>
-            </button>
-          </div>
         </div>
       </div>
 
-      {/* Simplified User Card at Bottom (desktop only) */}
-      <div className="hidden lg:flex pt-4 border-t border-slate-800/80 items-center space-x-3 px-1">
-        <img
-          src={currentUser.avatar}
-          alt={currentUser.name}
-          className="w-9 h-9 rounded-full object-cover border border-slate-700 shrink-0"
-        />
-        <div className="overflow-hidden">
-          <h4 className="text-xs font-semibold text-white truncate">{currentUser.name}</h4>
-          <span className="text-[10px] text-slate-400 truncate block">{activeRole}</span>
+      {/* User Card at Bottom */}
+      <div className="hidden lg:flex pt-4 border-t border-slate-800/80 items-center justify-between px-1">
+        <div className="flex items-center space-x-3 overflow-hidden">
+          <div className="relative">
+            <img
+              src={currentUser.avatar}
+              alt={currentUser.name}
+              className="w-10 h-10 rounded-xl object-cover border border-slate-700 shrink-0"
+            />
+            <span className="absolute -bottom-0.5 -right-0.5 w-3 h-3 rounded-full bg-emerald-500 border-2 border-[#141d2b]"></span>
+          </div>
+          <div className="overflow-hidden">
+            <h4 className="text-xs font-bold text-white truncate">{currentUser.name}</h4>
+            <span className="text-[10px] text-slate-400 truncate block font-medium">{activeRole}</span>
+          </div>
         </div>
       </div>
     </aside>

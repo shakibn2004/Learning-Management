@@ -2,8 +2,7 @@ import './globals.css';
 import type { Metadata } from 'next';
 import { Inter } from 'next/font/google';
 import { LMSProvider } from '../context/LMSContext';
-import { RoleHeader } from '../components/RoleHeader';
-import { Navbar } from '../components/Navbar';
+import { AppShell } from '../components/AppShell';
 
 const inter = Inter({
   subsets: ['latin'],
@@ -12,8 +11,8 @@ const inter = Inter({
 });
 
 export const metadata: Metadata = {
-  title: 'SaaSPro LMS - Enterprise Next.js Platform',
-  description: 'Full-featured Learning Management System frontend with 4-role RBAC access matrix, progress tracking, auto-graded quizzes, and blog management.',
+  title: 'SaaSPro LMS - Project-Based Learning Platform',
+  description: 'Enterprise Learning Management System with project-based paths, Strapi v5 headless CMS, and multi-role access.',
 };
 
 export default function RootLayout({
@@ -22,14 +21,10 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="en" className={`dark ${inter.variable}`}>
-      <body className="bg-[#080c14] text-slate-200 min-h-screen flex flex-col font-sans antialiased selection:bg-indigo-500 selection:text-white">
+    <html lang="en" className={inter.variable}>
+      <body className="font-sans antialiased">
         <LMSProvider>
-          <RoleHeader />
-          <div className="flex-1 max-w-[1440px] w-full mx-auto p-4 sm:p-6 lg:p-8 flex flex-col lg:flex-row items-start gap-8">
-            <Navbar />
-            <main className="flex-1 min-w-0 space-y-8">{children}</main>
-          </div>
+          <AppShell>{children}</AppShell>
         </LMSProvider>
       </body>
     </html>

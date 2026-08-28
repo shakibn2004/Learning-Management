@@ -17,7 +17,7 @@ export const BrandLogo: React.FC<BrandLogoProps> = ({ size = 'md', showText = tr
   const { icon, text } = dimMap[size];
 
   return (
-    <div className="flex items-center space-x-2.5 shrink-0">
+    <a href="/" className="flex items-center space-x-2.5 shrink-0 hover:opacity-90 transition-opacity">
       {/* Layered Crest Vector Icon matching favicon */}
       <div className={`${icon} rounded-xl bg-[#1e293b] border border-slate-700/80 p-1 flex items-center justify-center shadow-md shadow-blue-500/10`}>
         <svg viewBox="0 0 32 32" fill="none" className="w-full h-full">
@@ -32,6 +32,6 @@ export const BrandLogo: React.FC<BrandLogoProps> = ({ size = 'md', showText = tr
           SaaS<span className="text-[#3b82f6]">Pro</span>
         </span>
       )}
-    </div>
+    </a>
   );
 };
