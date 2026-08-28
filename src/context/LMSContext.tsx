@@ -12,6 +12,17 @@ interface LMSContextType {
   quizAttempts: QuizAttempt[];
   activeRole: UserRole;
   isLoading: boolean;
+  isAuthenticated: boolean;
+  authToken: string | null;
+  login: (email: string, password: string) => Promise<{ success: boolean; error?: string; user?: User }>;
+  register: (data: {
+    name: string;
+    email: string;
+    password: string;
+    role?: UserRole;
+    avatar?: string;
+  }) => Promise<{ success: boolean; error?: string; user?: User }>;
+  logout: () => void;
   switchRole: (role: UserRole) => void;
   updateUserRole: (userId: string, newRole: UserRole) => void;
   enrollInCourse: (courseId: string) => void;
@@ -47,6 +58,8 @@ export type PermissionAction =
 const LMSContext = createContext<LMSContextType | undefined>(undefined);
 
 const LOCAL_STORAGE_KEY = 'lms_master_state_v1';
+const AUTH_TOKEN_KEY = 'lms_auth_token';
+const AUTH_USER_KEY = 'lms_auth_user';
 
 export const LMSProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [users, setUsers] = useState<User[]>([]);
@@ -57,24 +70,35 @@ export const LMSProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const [activeRole, setActiveRole] = useState<UserRole>('Admin');
   const [isLoading, setIsLoading] = useState<boolean>(true);
 
+  // Authentication states
+  const [authToken, setAuthToken] = useState<string | null>(null);
+  const [authUser, setAuthUser] = useState<User | null>(null);
+  const isAuthenticated = !!authToken && !!authUser;
+
   const API_URL = process.env.NEXT_PUBLIC_STRAPI_URL || 'http://localhost:1337';
 
-  // Current active user matching current selected role or fallback user
-  const currentUser: User = users.find((u) => u.role === activeRole) || users[0] || {
-    id: `user-${activeRole.toLowerCase().replace(/\s+/g, '-')}`,
-    name: `${activeRole} User`,
-    email: `${activeRole.toLowerCase().replace(/\s+/g, '.')}@learnhub.com`,
-    role: activeRole,
-    avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=200&q=80',
-    enrolledCourseIds: [],
-    createdAt: new Date().toISOString(),
-  };
+  // Current active user: preference given to authenticated user, else role persona
+  const currentUser: User =
+    authUser ||
+    users.find((u) => u.role === activeRole) ||
+    users[0] || {
+      id: `user-${activeRole.toLowerCase().replace(/\s+/g, '-')}`,
+      name: `${activeRole} User`,
+      email: `${activeRole.toLowerCase().replace(/\s+/g, '.')}@learnhub.com`,
+      role: activeRole,
+      avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=200&q=80',
+      enrolledCourseIds: [],
+      createdAt: new Date().toISOString(),
+    };
 
   const strapiRequest = async (path: string, method = 'GET', body?: any) => {
     try {
       const headers: Record<string, string> = {
         'Content-Type': 'application/json',
       };
+      if (authToken) {
+        headers['Authorization'] = `Bearer ${authToken}`;
+      }
       if (activeRole) {
         headers['x-user-role'] = activeRole;
       }
@@ -105,6 +129,20 @@ export const LMSProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     const initData = async () => {
       setIsLoading(true);
       try {
+        // Restore session from localStorage if available
+        const savedToken = localStorage.getItem(AUTH_TOKEN_KEY);
+        const savedUser = localStorage.getItem(AUTH_USER_KEY);
+        if (savedToken && savedUser) {
+          try {
+            const parsedUser: User = JSON.parse(savedUser);
+            setAuthToken(savedToken);
+            setAuthUser(parsedUser);
+            setActiveRole(parsedUser.role);
+          } catch (e) {
+            console.warn('Failed to parse saved user', e);
+          }
+        }
+
         // 1. Fetch Users
         const usersRes = await fetch(`${API_URL}/api/lms-users`);
         if (usersRes.ok) {
@@ -234,10 +272,10 @@ export const LMSProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
     initData();
 
-    // Load active role from localStorage
+    // Load active role from localStorage if no logged-in user
     try {
       const saved = localStorage.getItem(LOCAL_STORAGE_KEY);
-      if (saved) {
+      if (saved && !localStorage.getItem(AUTH_USER_KEY)) {
         const parsed = JSON.parse(saved);
         if (parsed.activeRole) {
           setActiveRole(parsed.activeRole);
@@ -251,28 +289,111 @@ export const LMSProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   // Save activeRole to localStorage on changes
   useEffect(() => {
     try {
-      localStorage.setItem(
-        LOCAL_STORAGE_KEY,
-        JSON.stringify({ activeRole })
-      );
+      localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify({ activeRole }));
     } catch (e) {
       console.warn('Failed to persist activeRole', e);
     }
   }, [activeRole]);
 
+  // Authentication Methods
+  const login = async (email: string, password: string): Promise<{ success: boolean; error?: string; user?: User }> => {
+    try {
+      const res = await fetch(`${API_URL}/api/lms-users/login`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, password }),
+      });
+
+      const data = await res.json();
+      if (!res.ok || !data.jwt) {
+        return {
+          success: false,
+          error: data.error || 'Login failed. Please check your credentials.',
+        };
+      }
+
+      setAuthToken(data.jwt);
+      setAuthUser(data.user);
+      setActiveRole(data.user.role);
+
+      localStorage.setItem(AUTH_TOKEN_KEY, data.jwt);
+      localStorage.setItem(AUTH_USER_KEY, JSON.stringify(data.user));
+
+      return { success: true, user: data.user };
+    } catch (err: any) {
+      return { success: false, error: err.message || 'Network error during login' };
+    }
+  };
+
+  const register = async (userData: {
+    name: string;
+    email: string;
+    password: string;
+    role?: UserRole;
+    avatar?: string;
+  }): Promise<{ success: boolean; error?: string; user?: User }> => {
+    try {
+      const res = await fetch(`${API_URL}/api/lms-users/register`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(userData),
+      });
+
+      const data = await res.json();
+      if (!res.ok || !data.jwt) {
+        return {
+          success: false,
+          error: data.error || 'Registration failed. Email may already be registered.',
+        };
+      }
+
+      setAuthToken(data.jwt);
+      setAuthUser(data.user);
+      setActiveRole(data.user.role);
+
+      localStorage.setItem(AUTH_TOKEN_KEY, data.jwt);
+      localStorage.setItem(AUTH_USER_KEY, JSON.stringify(data.user));
+
+      // Append to local users state
+      setUsers((prev) => [data.user, ...prev]);
+
+      return { success: true, user: data.user };
+    } catch (err: any) {
+      return { success: false, error: err.message || 'Network error during registration' };
+    }
+  };
+
+  const logout = () => {
+    setAuthToken(null);
+    setAuthUser(null);
+    localStorage.removeItem(AUTH_TOKEN_KEY);
+    localStorage.removeItem(AUTH_USER_KEY);
+  };
+
   const switchRole = (role: UserRole) => {
     setActiveRole(role);
+    // If switching persona while not logged in as specific user, update authUser if matches
+    const matching = users.find((u) => u.role === role);
+    if (matching && !authUser) {
+      // Keep selected
+    }
   };
 
   const updateUserRole = async (userId: string, newRole: UserRole) => {
     try {
       const res = await strapiRequest(`/api/lms-users/${userId}`, 'PUT', {
-        data: { role: newRole }
+        data: { role: newRole },
       });
       if (res?.data) {
         setUsers((prev) =>
           prev.map((u) => (u.id === userId ? { ...u, role: newRole } : u))
         );
+        if (authUser?.id === userId) {
+          const updatedUser = { ...authUser, role: newRole };
+          setAuthUser(updatedUser);
+          setActiveRole(newRole);
+          localStorage.setItem(AUTH_USER_KEY, JSON.stringify(updatedUser));
+        }
       }
     } catch (err) {
       alert(`Error updating user role: ${err instanceof Error ? err.message : String(err)}`);
@@ -285,9 +406,8 @@ export const LMSProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       const already = currentUser.enrolledCourseIds.includes(courseId);
       const updatedCourseIds = already ? currentUser.enrolledCourseIds : [...currentUser.enrolledCourseIds, courseId];
 
-      // Update user enrolled courses in Strapi
       const userRes = await strapiRequest(`/api/lms-users/${currentUser.id}`, 'PUT', {
-        data: { enrolledCourseIds: updatedCourseIds }
+        data: { enrolledCourseIds: updatedCourseIds },
       });
 
       if (userRes?.data) {
@@ -302,6 +422,11 @@ export const LMSProvider: React.FC<{ children: React.ReactNode }> = ({ children 
             return u;
           })
         );
+        if (authUser?.id === currentUser.id) {
+          const updated = { ...authUser, enrolledCourseIds: updatedCourseIds };
+          setAuthUser(updated);
+          localStorage.setItem(AUTH_USER_KEY, JSON.stringify(updated));
+        }
       }
 
       // Initialize progress entry in Strapi if not exists
@@ -312,7 +437,7 @@ export const LMSProvider: React.FC<{ children: React.ReactNode }> = ({ children 
             userId: currentUser.id,
             courseId,
             completedLessonIds: [],
-          }
+          },
         });
         if (progRes?.data) {
           const returnedProg = progRes.data;
@@ -324,7 +449,7 @@ export const LMSProvider: React.FC<{ children: React.ReactNode }> = ({ children 
               courseId,
               completedLessonIds: [],
               updatedAt: new Date().toISOString(),
-            }
+            },
           ]);
         }
       }
@@ -355,7 +480,7 @@ export const LMSProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       const existingIndex = progress.findIndex(
         (p) => p.userId === currentUser.id && p.courseId === courseId
       );
-      
+
       let res;
       let newCompleted: string[] = [];
 
@@ -365,7 +490,7 @@ export const LMSProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         newCompleted = isComp
           ? item.completedLessonIds.filter((id) => id !== lessonId)
           : [...item.completedLessonIds, lessonId];
-        
+
         const progressDocId = (item as any).id;
 
         if (progressDocId) {
@@ -373,7 +498,7 @@ export const LMSProvider: React.FC<{ children: React.ReactNode }> = ({ children 
             data: {
               completedLessonIds: newCompleted,
               lastAccessedLessonId: lessonId,
-            }
+            },
           });
         } else {
           res = await strapiRequest('/api/user-course-progresses', 'POST', {
@@ -382,7 +507,7 @@ export const LMSProvider: React.FC<{ children: React.ReactNode }> = ({ children 
               courseId,
               completedLessonIds: newCompleted,
               lastAccessedLessonId: lessonId,
-            }
+            },
           });
         }
       } else {
@@ -393,7 +518,7 @@ export const LMSProvider: React.FC<{ children: React.ReactNode }> = ({ children 
             courseId,
             completedLessonIds: newCompleted,
             lastAccessedLessonId: lessonId,
-          }
+          },
         });
       }
 
@@ -442,7 +567,7 @@ export const LMSProvider: React.FC<{ children: React.ReactNode }> = ({ children 
             instructorName: courseData.instructorName,
             price: courseData.price,
             published: courseData.published,
-          }
+          },
         });
       } else {
         res = await strapiRequest('/api/courses', 'POST', {
@@ -458,7 +583,7 @@ export const LMSProvider: React.FC<{ children: React.ReactNode }> = ({ children 
             instructorName: courseData.instructorName,
             price: courseData.price,
             published: courseData.published,
-          }
+          },
         });
       }
 
@@ -507,7 +632,7 @@ export const LMSProvider: React.FC<{ children: React.ReactNode }> = ({ children 
             videoUrl: lessonData.videoUrl,
             content: lessonData.content,
             order: lessonData.order,
-          }
+          },
         });
       } else {
         res = await strapiRequest('/api/lessons', 'POST', {
@@ -520,7 +645,7 @@ export const LMSProvider: React.FC<{ children: React.ReactNode }> = ({ children 
             content: lessonData.content,
             order: lessonData.order,
             course: courseId,
-          }
+          },
         });
       }
 
@@ -583,7 +708,7 @@ export const LMSProvider: React.FC<{ children: React.ReactNode }> = ({ children 
             description: quizData.description,
             passingScore: quizData.passingScore,
             questions: quizData.questions,
-          }
+          },
         });
       } else {
         res = await strapiRequest('/api/quizzes', 'POST', {
@@ -594,7 +719,7 @@ export const LMSProvider: React.FC<{ children: React.ReactNode }> = ({ children 
             passingScore: quizData.passingScore,
             questions: quizData.questions,
             course: courseId,
-          }
+          },
         });
       }
 
@@ -648,7 +773,6 @@ export const LMSProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       completedAt: new Date().toISOString(),
     };
 
-    // Save async to Strapi backend
     strapiRequest('/api/quiz-attempts', 'POST', {
       data: {
         documentId: attemptId,
@@ -658,21 +782,23 @@ export const LMSProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         passed,
         answers,
         completedAt: attempt.completedAt,
-      }
-    }).then((res) => {
-      if (res?.data) {
-        const returnedAttempt = res.data;
-        setQuizAttempts((prev) => [
-          {
-            ...attempt,
-            id: returnedAttempt.documentId || String(returnedAttempt.id),
-          },
-          ...prev.filter((qa) => qa.id !== attemptId),
-        ]);
-      }
-    }).catch((err) => {
-      console.error('Failed to save quiz attempt to Strapi:', err);
-    });
+      },
+    })
+      .then((res) => {
+        if (res?.data) {
+          const returnedAttempt = res.data;
+          setQuizAttempts((prev) => [
+            {
+              ...attempt,
+              id: returnedAttempt.documentId || String(returnedAttempt.id),
+            },
+            ...prev.filter((qa) => qa.id !== attemptId),
+          ]);
+        }
+      })
+      .catch((err) => {
+        console.error('Failed to save quiz attempt to Strapi:', err);
+      });
 
     setQuizAttempts((prev) => [attempt, ...prev]);
     return attempt;
@@ -695,7 +821,7 @@ export const LMSProvider: React.FC<{ children: React.ReactNode }> = ({ children 
             status: post.status,
             publishedAt: post.publishedAt,
             tags: post.tags,
-          }
+          },
         });
       } else {
         res = await strapiRequest('/api/blog-posts', 'POST', {
@@ -711,7 +837,7 @@ export const LMSProvider: React.FC<{ children: React.ReactNode }> = ({ children 
             status: post.status,
             publishedAt: post.publishedAt || (post.status === 'Published' ? new Date().toISOString() : null),
             tags: post.tags,
-          }
+          },
         });
       }
 
@@ -758,7 +884,7 @@ export const LMSProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         data: {
           status: newStatus,
           publishedAt,
-        }
+        },
       });
 
       if (res?.data) {
@@ -807,7 +933,7 @@ export const LMSProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         if (role === 'Instructor') {
           return targetOwnerId ? targetOwnerId === currentUser.id : true;
         }
-        return role === 'Student'; // Can view own
+        return role === 'Student';
 
       case 'manage_blogs':
         return role === 'Admin' || role === 'Content Manager';
@@ -832,6 +958,11 @@ export const LMSProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         quizAttempts,
         activeRole,
         isLoading,
+        isAuthenticated,
+        authToken,
+        login,
+        register,
+        logout,
         switchRole,
         updateUserRole,
         enrollInCourse,

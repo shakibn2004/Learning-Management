@@ -14,10 +14,13 @@ import {
   Users,
   Settings,
   Sparkles,
+  LogOut,
+  LogIn,
+  UserPlus,
 } from 'lucide-react';
 
 export const Navbar: React.FC = () => {
-  const { activeRole, currentUser } = useLMS();
+  const { activeRole, currentUser, isAuthenticated, logout } = useLMS();
   const pathname = usePathname();
 
   // Role-namespaced navigation menus with clear, vibrant labels
@@ -94,20 +97,48 @@ export const Navbar: React.FC = () => {
 
       {/* User Card at Bottom */}
       <div className="hidden lg:flex pt-4 border-t border-slate-800/80 items-center justify-between px-1">
-        <div className="flex items-center space-x-3 overflow-hidden">
-          <div className="relative">
-            <img
-              src={currentUser.avatar}
-              alt={currentUser.name}
-              className="w-10 h-10 rounded-xl object-cover border border-slate-700 shrink-0"
-            />
-            <span className="absolute -bottom-0.5 -right-0.5 w-3 h-3 rounded-full bg-emerald-500 border-2 border-[#141d2b]"></span>
+        {isAuthenticated ? (
+          <div className="flex items-center justify-between w-full">
+            <div className="flex items-center space-x-3 overflow-hidden">
+              <div className="relative">
+                <img
+                  src={currentUser.avatar}
+                  alt={currentUser.name}
+                  className="w-10 h-10 rounded-xl object-cover border border-slate-700 shrink-0"
+                />
+                <span className="absolute -bottom-0.5 -right-0.5 w-3 h-3 rounded-full bg-emerald-500 border-2 border-[#141d2b]"></span>
+              </div>
+              <div className="overflow-hidden">
+                <h4 className="text-xs font-bold text-white truncate">{currentUser.name}</h4>
+                <span className="text-[10px] text-slate-400 truncate block font-medium">{activeRole}</span>
+              </div>
+            </div>
+            <button
+              onClick={() => logout()}
+              title="Sign Out"
+              className="p-2 rounded-xl text-slate-400 hover:text-rose-400 hover:bg-rose-500/10 transition-colors"
+            >
+              <LogOut className="w-4 h-4" />
+            </button>
           </div>
-          <div className="overflow-hidden">
-            <h4 className="text-xs font-bold text-white truncate">{currentUser.name}</h4>
-            <span className="text-[10px] text-slate-400 truncate block font-medium">{activeRole}</span>
+        ) : (
+          <div className="w-full space-y-2">
+            <Link
+              href="/login"
+              className="w-full py-2 px-3 bg-cyan-500/15 hover:bg-cyan-500/25 border border-cyan-500/30 text-cyan-300 rounded-xl text-xs font-bold flex items-center justify-center space-x-1.5 transition-colors"
+            >
+              <LogIn className="w-3.5 h-3.5" />
+              <span>Sign In</span>
+            </Link>
+            <Link
+              href="/register"
+              className="w-full py-2 px-3 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-xl text-xs font-semibold flex items-center justify-center space-x-1.5 transition-colors"
+            >
+              <UserPlus className="w-3.5 h-3.5" />
+              <span>Create Account</span>
+            </Link>
           </div>
-        </div>
+        )}
       </div>
     </aside>
   );

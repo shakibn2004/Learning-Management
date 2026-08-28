@@ -13,7 +13,7 @@ interface RouteGuardProps {
 }
 
 export const RouteGuard: React.FC<RouteGuardProps> = ({ allowedRoles, children }) => {
-  const { activeRole, switchRole } = useLMS();
+  const { activeRole, switchRole, isAuthenticated } = useLMS();
   const pathname = usePathname();
   const [isSyncing, setIsSyncing] = useState(false);
 
@@ -68,6 +68,15 @@ export const RouteGuard: React.FC<RouteGuardProps> = ({ allowedRoles, children }
         </div>
 
         <div className="pt-4 flex flex-wrap items-center justify-center gap-3">
+          {!isAuthenticated && (
+            <Link
+              href="/login"
+              className="px-5 py-2.5 bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 text-white rounded-xl text-xs font-bold shadow-lg shadow-cyan-500/25 flex items-center space-x-2"
+            >
+              <span>Sign In to Account</span>
+            </Link>
+          )}
+
           <button
             onClick={() => switchRole(targetRequiredRole)}
             className="px-5 py-2.5 bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-500 hover:to-purple-500 text-white rounded-xl text-xs font-bold shadow-lg shadow-indigo-500/25 flex items-center space-x-2"

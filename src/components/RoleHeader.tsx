@@ -4,8 +4,9 @@ import React, { useState } from 'react';
 import { useLMS } from '../context/LMSContext';
 import { UserRole } from '../types';
 import { useRouter } from 'next/navigation';
+import Link from 'next/link';
 import { BrandLogo } from './BrandLogo';
-import { ShieldCheck, UserCheck, BookOpen, GraduationCap, Info, X, Menu } from 'lucide-react';
+import { ShieldCheck, UserCheck, BookOpen, GraduationCap, Info, X, Menu, LogOut, LogIn, UserPlus } from 'lucide-react';
 
 const ROLES_INFO: { role: UserRole; title: string; defaultRoute: string; icon: any; desc: string }[] = [
   {
@@ -39,7 +40,7 @@ const ROLES_INFO: { role: UserRole; title: string; defaultRoute: string; icon: a
 ];
 
 export const RoleHeader: React.FC = () => {
-  const { activeRole, switchRole } = useLMS();
+  const { activeRole, switchRole, currentUser, isAuthenticated, logout } = useLMS();
   const [showMatrix, setShowMatrix] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const router = useRouter();
@@ -89,15 +90,53 @@ export const RoleHeader: React.FC = () => {
           </div>
         </div>
 
-        {/* Right Actions & Mobile Hamburger */}
+        {/* Right Actions & Auth */}
         <div className="flex items-center gap-2">
           <button
             onClick={() => setShowMatrix(true)}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium bg-[#1a2436] hover:bg-slate-800 text-slate-300 border border-slate-800 transition-colors"
+            className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium bg-[#1a2436] hover:bg-slate-800 text-slate-300 border border-slate-800 transition-colors"
           >
             <Info className="w-4 h-4 text-[#3b82f6]" />
-            <span className="hidden sm:inline">Permission Matrix</span>
+            <span>Matrix</span>
           </button>
+
+          {isAuthenticated ? (
+            <div className="flex items-center space-x-2 pl-2 border-l border-slate-800">
+              <div className="hidden lg:flex items-center space-x-2">
+                <img
+                  src={currentUser.avatar}
+                  alt={currentUser.name}
+                  className="w-7 h-7 rounded-lg object-cover border border-slate-700"
+                />
+                <span className="text-xs font-semibold text-white max-w-[100px] truncate">{currentUser.name}</span>
+              </div>
+              <button
+                onClick={() => logout()}
+                title="Sign Out"
+                className="flex items-center space-x-1 px-2.5 py-1.5 rounded-lg bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 border border-rose-500/20 text-xs font-medium transition-colors"
+              >
+                <LogOut className="w-3.5 h-3.5" />
+                <span className="hidden sm:inline">Sign Out</span>
+              </button>
+            </div>
+          ) : (
+            <div className="flex items-center space-x-2 pl-2 border-l border-slate-800">
+              <Link
+                href="/login"
+                className="px-3 py-1.5 bg-[#3b82f6] hover:bg-blue-600 text-white rounded-lg text-xs font-semibold flex items-center space-x-1.5 transition-colors shadow-sm"
+              >
+                <LogIn className="w-3.5 h-3.5" />
+                <span>Sign In</span>
+              </Link>
+              <Link
+                href="/register"
+                className="hidden sm:flex px-3 py-1.5 bg-[#1a2436] hover:bg-slate-800 text-slate-300 rounded-lg text-xs font-semibold items-center space-x-1.5 border border-slate-800 transition-colors"
+              >
+                <UserPlus className="w-3.5 h-3.5" />
+                <span>Register</span>
+              </Link>
+            </div>
+          )}
 
           <button
             onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
