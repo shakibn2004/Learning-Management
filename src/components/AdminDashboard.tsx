@@ -128,116 +128,11 @@ export const AdminDashboard: React.FC = () => {
         </div>
       </div>
 
-      {/* 2. PLATFORM ANALYTICS CHARTS */}
+      {/* 2. PLATFORM ANALYTICS & VISITOR METRICS */}
       <PlatformAnalyticsCharts />
 
-      {/* 3. RECENT TEAM ACTIVITY & TEAM MEMBERS WITH QUICK ACTIONS */}
+      {/* 3. REVENUE BREAKDOWN & LIVE AUDIT ACTIVITY FEED */}
       <DashboardFinancialsAndActivity />
-
-      {/* 4. USER ROLE MANAGEMENT TABLE */}
-      <div className="bg-[#141d2b] rounded-2xl border border-slate-800/80 overflow-hidden space-y-4">
-        <div className="p-6 border-b border-slate-800/80 flex flex-col md:flex-row md:items-center justify-between gap-4">
-          <div>
-            <h3 className="text-base font-bold text-white flex items-center gap-2 tracking-tight">
-              <ShieldCheck className="w-5 h-5 text-[#3b82f6]" />
-              <span>User Role Management & Permissions</span>
-            </h3>
-            <p className="text-xs text-slate-400 mt-0.5">Manage platform accounts, security clearance, and role assignments directly in Strapi.</p>
-          </div>
-
-          <div className="flex flex-wrap items-center gap-3">
-            {/* Search Input */}
-            <div className="relative">
-              <Search className="w-4 h-4 text-slate-400 absolute left-3 top-2.5" />
-              <input
-                type="text"
-                placeholder="Search user..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="bg-[#1a2436] text-xs pl-9 pr-3.5 py-2 rounded-xl w-56 text-slate-200 border border-slate-800 focus:outline-none focus:border-[#3b82f6]"
-              />
-            </div>
-
-            {/* Role Filter */}
-            <select
-              value={roleFilter}
-              onChange={(e) => setRoleFilter(e.target.value)}
-              className="bg-[#1a2436] text-xs px-3.5 py-2 rounded-xl text-slate-200 border border-slate-800 focus:outline-none focus:border-[#3b82f6]"
-            >
-              <option value="ALL">All Roles</option>
-              <option value="Admin">Admin</option>
-              <option value="Content Manager">Content Manager</option>
-              <option value="Instructor">Instructor</option>
-              <option value="Student">Student</option>
-            </select>
-          </div>
-        </div>
-
-        <div className="overflow-x-auto">
-          <table className="w-full text-xs text-left text-slate-300">
-            <thead className="bg-[#1a2436] text-slate-400 uppercase font-mono border-b border-slate-800">
-              <tr>
-                <th className="px-6 py-3.5">User</th>
-                <th className="px-6 py-3.5">Current Role</th>
-                <th className="px-6 py-3.5">Status</th>
-                <th className="px-6 py-3.5">Reassign Role (Backend Sync)</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-slate-800/60">
-              {filteredUsers.map((user) => {
-                return (
-                  <tr key={user.id} className="hover:bg-[#1a2436]/50 transition-colors">
-                    <td className="px-6 py-3.5 flex items-center space-x-3">
-                      <img
-                        src={user.avatar}
-                        alt={user.name}
-                        className="w-8 h-8 rounded-full object-cover border border-slate-700"
-                      />
-                      <div>
-                        <div className="font-semibold text-white">{user.name}</div>
-                        <div className="text-slate-400 text-[11px]">{user.email}</div>
-                      </div>
-                    </td>
-                    <td className="px-6 py-3.5">
-                      <span
-                        className={`inline-flex items-center px-2.5 py-1 rounded-md text-[11px] font-semibold border ${
-                          user.role === 'Admin'
-                            ? 'bg-rose-500/15 text-rose-400 border-rose-500/30'
-                            : user.role === 'Content Manager'
-                            ? 'bg-amber-500/15 text-amber-400 border-amber-500/30'
-                            : user.role === 'Instructor'
-                            ? 'bg-indigo-500/15 text-indigo-400 border-indigo-500/30'
-                            : 'bg-emerald-500/15 text-emerald-400 border-emerald-500/30'
-                        }`}
-                      >
-                        {user.role}
-                      </span>
-                    </td>
-                    <td className="px-6 py-3.5 text-slate-400 font-mono">
-                      <span className="text-emerald-400 font-medium flex items-center gap-1.5">
-                        <span className="w-2 h-2 rounded-full bg-emerald-400"></span>
-                        Active
-                      </span>
-                    </td>
-                    <td className="px-6 py-3.5">
-                      <select
-                        value={user.role}
-                        onChange={(e) => updateUserRole(user.id, e.target.value as UserRole)}
-                        className="bg-[#1a2436] text-xs px-3 py-1.5 rounded-lg border border-slate-700 text-slate-200 focus:outline-none focus:border-[#3b82f6] cursor-pointer"
-                      >
-                        <option value="Admin">Admin</option>
-                        <option value="Content Manager">Content Manager</option>
-                        <option value="Instructor">Instructor</option>
-                        <option value="Student">Student</option>
-                      </select>
-                    </td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
-        </div>
-      </div>
     </div>
   );
 };

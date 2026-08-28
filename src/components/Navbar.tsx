@@ -20,8 +20,11 @@ import {
 } from 'lucide-react';
 
 export const Navbar: React.FC = () => {
-  const { activeRole, currentUser, isAuthenticated, logout } = useLMS();
+  const { currentUser, isAuthenticated, logout } = useLMS();
   const pathname = usePathname();
+
+  // Strictly use the logged-in user's role
+  const userRole = currentUser?.role || 'Student';
 
   // Role-namespaced navigation menus with clear, vibrant labels
   const navMenus = {
@@ -50,7 +53,7 @@ export const Navbar: React.FC = () => {
     ],
   };
 
-  const currentNav = navMenus[activeRole] || navMenus.Admin;
+  const currentNav = navMenus[userRole as keyof typeof navMenus] || navMenus.Student;
 
   return (
     <aside className="w-full lg:w-64 bg-[#141d2b] border border-slate-800/80 shrink-0 p-4 sm:p-5 flex flex-col justify-between lg:sticky lg:top-20 lg:h-[calc(100vh-6rem)] overflow-y-auto rounded-2xl z-30 shadow-lg shadow-black/20">
@@ -110,7 +113,7 @@ export const Navbar: React.FC = () => {
               </div>
               <div className="overflow-hidden">
                 <h4 className="text-xs font-bold text-white truncate">{currentUser.name}</h4>
-                <span className="text-[10px] text-slate-400 truncate block font-medium">{activeRole}</span>
+                <span className="text-[10px] text-slate-400 truncate block font-medium">{userRole}</span>
               </div>
             </div>
             <button

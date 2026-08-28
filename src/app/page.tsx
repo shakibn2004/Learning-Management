@@ -32,6 +32,10 @@ import {
   MessageSquare,
   ChevronDown,
   UserCheck,
+  LogIn,
+  UserPlus,
+  LogOut,
+  GraduationCap,
 } from 'lucide-react';
 
 const PROJECT_CATEGORIES = [
@@ -273,7 +277,7 @@ const SHOWCASE_PROJECTS = [
 ];
 
 export default function DynamicFramerLandingPage() {
-  const { courses } = useLMS();
+  const { courses, currentUser, isAuthenticated, logout } = useLMS();
   const [activeTab, setActiveTab] = useState<string>('all');
   const [openFaq, setOpenFaq] = useState<number | null>(0);
 
@@ -288,7 +292,80 @@ export default function DynamicFramerLandingPage() {
       });
 
   return (
-    <div className="w-full bg-white text-slate-900 overflow-x-hidden">
+    <div className="w-full bg-white text-slate-900 overflow-x-hidden pt-16 sm:pt-20">
+      {/* =========================================================================
+          TOP FLOATING GLASSMORPHIC NAVBAR WITH LOGIN & REGISTRATION
+      ========================================================================= */}
+      <header className="fixed top-0 left-0 right-0 z-50 bg-slate-950/85 backdrop-blur-xl border-b border-white/10 transition-all duration-300">
+        <div className="max-w-7xl mx-auto px-4 sm:px-8 h-16 sm:h-20 flex items-center justify-between">
+          {/* Brand Logo */}
+          <Link href="/" className="flex items-center space-x-2.5 sm:space-x-3 group">
+            <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-gradient-to-tr from-cyan-500 via-blue-600 to-indigo-600 flex items-center justify-center shadow-lg shadow-cyan-500/20 group-hover:scale-105 transition-transform">
+              <GraduationCap className="w-5 h-5 text-white" />
+            </div>
+            <div>
+              <span className="text-lg sm:text-xl font-black tracking-tight text-white group-hover:text-cyan-400 transition-colors">
+                Learn<span className="text-cyan-400">Hub</span>
+              </span>
+              <span className="block text-[8px] sm:text-[9px] uppercase font-mono font-bold tracking-widest text-slate-400 -mt-1">
+                LMS Platform
+              </span>
+            </div>
+          </Link>
+
+          {/* Center Nav Links */}
+          <nav className="hidden md:flex items-center space-x-7 text-xs sm:text-sm font-medium text-slate-300">
+            <a href="#categories" className="hover:text-cyan-400 transition-colors">Tracks</a>
+            <a href="#featured-projects" className="hover:text-cyan-400 transition-colors">Projects</a>
+            <Link href="/blogs" className="hover:text-cyan-400 transition-colors">Articles</Link>
+            <Link href="/student/catalog" className="hover:text-cyan-400 transition-colors">All Courses</Link>
+          </nav>
+
+          {/* Right Auth Action Buttons */}
+          <div className="flex items-center space-x-2 sm:space-x-3">
+            {isAuthenticated ? (
+              <div className="flex items-center space-x-2 sm:space-x-3">
+                <Link
+                  href="/dashboard"
+                  className="flex items-center space-x-2 px-3 sm:px-4 py-1.5 sm:py-2 rounded-xl bg-cyan-500/10 hover:bg-cyan-500/20 border border-cyan-500/30 text-cyan-300 text-xs sm:text-sm font-bold transition-all"
+                >
+                  <img
+                    src={currentUser.avatar}
+                    alt={currentUser.name}
+                    className="w-5 h-5 rounded-full object-cover"
+                  />
+                  <span>Dashboard</span>
+                </Link>
+                <button
+                  onClick={() => logout()}
+                  title="Sign Out"
+                  className="p-2 rounded-xl text-slate-400 hover:text-rose-400 hover:bg-rose-500/10 transition-colors"
+                >
+                  <LogOut className="w-4 h-4" />
+                </button>
+              </div>
+            ) : (
+              <div className="flex items-center space-x-2 sm:space-x-3">
+                <Link
+                  href="/login"
+                  className="px-3.5 sm:px-4 py-1.5 sm:py-2 rounded-xl text-xs sm:text-sm font-bold text-slate-200 hover:text-white hover:bg-white/10 transition-all flex items-center space-x-1.5"
+                >
+                  <LogIn className="w-4 h-4 text-cyan-400" />
+                  <span>Sign In</span>
+                </Link>
+                <Link
+                  href="/register"
+                  className="px-3.5 sm:px-5 py-1.5 sm:py-2.5 rounded-xl bg-gradient-to-r from-cyan-500 via-blue-600 to-indigo-600 hover:from-cyan-400 hover:via-blue-500 hover:to-indigo-500 text-white font-extrabold text-xs sm:text-sm shadow-lg shadow-cyan-500/25 transition-all flex items-center space-x-1.5 active:scale-95"
+                >
+                  <UserPlus className="w-3.5 h-3.5" />
+                  <span>Register</span>
+                </Link>
+              </div>
+            )}
+          </div>
+        </div>
+      </header>
+
       {/* =========================================================================
           SECTION 1: HERO SECTION (Chinese University Campus Green Field & Tech Platform)
       ========================================================================= */}
@@ -339,22 +416,30 @@ export default function DynamicFramerLandingPage() {
               Explore curated courses, interactive quizzes, and master software engineering skills with hands-on learning.
             </motion.p>
 
-            {/* Simple & Clean Action Buttons (No Order Track) */}
+            {/* Simple & Clean Action Buttons with Register and Sign In */}
             <motion.div
               variants={fadeInUp}
-              className="flex flex-wrap items-center gap-4 pt-2"
+              className="flex flex-wrap items-center gap-3.5 pt-2"
             >
               <Link
-                href="/student/catalog"
-                className="px-7 py-3.5 rounded-xl bg-cyan-500 hover:bg-cyan-400 text-slate-950 font-bold text-sm shadow-lg shadow-cyan-500/25 transition-all active:scale-95"
+                href="/register"
+                className="px-7 py-3.5 rounded-xl bg-gradient-to-r from-cyan-500 via-blue-600 to-indigo-600 hover:from-cyan-400 hover:via-blue-500 hover:to-indigo-500 text-white font-extrabold text-sm shadow-xl shadow-cyan-500/25 transition-all active:scale-95 flex items-center space-x-2"
               >
-                Explore Courses
+                <span>Get Started Free</span>
+                <ArrowRight className="w-4 h-4" />
               </Link>
               <Link
-                href="/student/dashboard"
-                className="px-7 py-3.5 rounded-xl bg-white/10 hover:bg-white/20 text-white font-semibold text-sm border border-white/20 backdrop-blur-md transition-all active:scale-95"
+                href="/login"
+                className="px-6 py-3.5 rounded-xl bg-white/10 hover:bg-white/20 text-white font-bold text-sm border border-white/20 backdrop-blur-md transition-all active:scale-95 flex items-center space-x-2"
               >
-                Student Portal
+                <LogIn className="w-4 h-4 text-cyan-400" />
+                <span>Sign In</span>
+              </Link>
+              <Link
+                href="/student/catalog"
+                className="px-5 py-3.5 rounded-xl text-slate-300 hover:text-white font-semibold text-sm transition-colors"
+              >
+                Browse Catalog
               </Link>
             </motion.div>
           </motion.div>
@@ -951,24 +1036,59 @@ export default function DynamicFramerLandingPage() {
                 </span>
               </h2>
 
-              {/* Buttons */}
+              {/* Action Buttons */}
               <div className="flex flex-wrap items-center gap-4 pt-2">
                 <Link
-                  href="/student/catalog"
-                  className="px-8 py-4 rounded-xl bg-cyan-500 hover:bg-cyan-400 text-slate-950 font-bold text-sm shadow-xl shadow-cyan-500/25 transition-all active:scale-95"
+                  href="/register"
+                  className="px-8 py-4 rounded-xl bg-gradient-to-r from-cyan-500 via-blue-600 to-indigo-600 hover:from-cyan-400 hover:via-blue-500 hover:to-indigo-500 text-white font-extrabold text-sm shadow-xl shadow-cyan-500/25 transition-all active:scale-95 flex items-center space-x-2"
                 >
-                  Start Learning Now
+                  <span>Create Free Account</span>
+                  <ArrowRight className="w-4 h-4" />
                 </Link>
                 <Link
-                  href="/student/dashboard"
-                  className="px-8 py-4 rounded-xl bg-white/10 hover:bg-white/20 text-white font-semibold text-sm border border-white/20 backdrop-blur-md transition-all active:scale-95"
+                  href="/login"
+                  className="px-8 py-4 rounded-xl bg-white/10 hover:bg-white/20 text-white font-bold text-sm border border-white/20 backdrop-blur-md transition-all active:scale-95 flex items-center space-x-2"
                 >
-                  Explore Dashboard
+                  <LogIn className="w-4 h-4 text-cyan-400" />
+                  <span>Sign In</span>
+                </Link>
+                <Link
+                  href="/student/catalog"
+                  className="px-6 py-4 rounded-xl text-slate-300 hover:text-white font-semibold text-sm transition-colors"
+                >
+                  Browse Catalog
                 </Link>
               </div>
             </motion.div>
           </div>
         </section>
+
+        {/* Modern Footer */}
+        <footer className="border-t border-white/10 bg-slate-950 py-10 px-6 sm:px-12 text-slate-400 text-xs">
+          <div className="max-w-7xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-6">
+            <div className="flex items-center space-x-3">
+              <div className="w-8 h-8 rounded-xl bg-cyan-500/20 border border-cyan-500/30 flex items-center justify-center text-cyan-400">
+                <GraduationCap className="w-4 h-4" />
+              </div>
+              <span className="font-bold text-white text-sm">
+                Learn<span className="text-cyan-400">Hub</span> LMS
+              </span>
+              <span className="text-slate-500">|</span>
+              <span>Full-Stack Engineering Platform</span>
+            </div>
+
+            <div className="flex flex-wrap items-center gap-6">
+              <Link href="/login" className="hover:text-cyan-400 transition-colors">Sign In</Link>
+              <Link href="/register" className="hover:text-cyan-400 transition-colors">Register</Link>
+              <Link href="/student/catalog" className="hover:text-cyan-400 transition-colors">Courses</Link>
+              <Link href="/blogs" className="hover:text-cyan-400 transition-colors">Blog</Link>
+            </div>
+
+            <div className="text-slate-500">
+              © {new Date().getFullYear()} LearnHub Inc. All rights reserved.
+            </div>
+          </div>
+        </footer>
       </div>
     </div>
   );

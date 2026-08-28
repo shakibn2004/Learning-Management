@@ -62,31 +62,14 @@ export const RoleHeader: React.FC = () => {
           </span>
         </div>
 
-        {/* Desktop 4-Role Quick Switcher */}
-        <div className="hidden md:flex items-center bg-[#1a2436] p-1.5 rounded-xl border border-slate-800">
-          <span className="text-xs font-medium text-slate-400 px-3 hidden lg:inline-block">
-            Persona Switcher:
-          </span>
-          <div className="flex items-center space-x-1">
-            {ROLES_INFO.map((r) => {
-              const Icon = r.icon;
-              const isActive = activeRole === r.role;
-              return (
-                <button
-                  key={r.role}
-                  onClick={() => handleRoleChange(r.role, r.defaultRoute)}
-                  className={`flex items-center space-x-2 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all duration-200 ${
-                    isActive
-                      ? 'bg-[#3b82f6] text-white shadow-sm'
-                      : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/50'
-                  }`}
-                  title={r.desc}
-                >
-                  <Icon className={`w-3.5 h-3.5 ${isActive ? 'text-white' : 'text-slate-400'}`} />
-                  <span>{r.role}</span>
-                </button>
-              );
-            })}
+        {/* Logged-In User Role Output Display (Strict Role Locking) */}
+        <div className="flex items-center gap-3">
+          <div className="flex items-center space-x-2 px-3.5 py-1.5 rounded-xl bg-[#1a2436] border border-slate-800 shadow-sm">
+            <span className="text-xs font-medium text-slate-400">Current Portal:</span>
+            <div className="flex items-center space-x-1.5 px-2.5 py-1 rounded-lg bg-cyan-500/15 border border-cyan-500/30 text-cyan-400 text-xs font-bold shadow-xs">
+              <span className="w-2 h-2 rounded-full bg-cyan-400 animate-pulse" />
+              <span>{currentUser?.role || 'Student'}</span>
+            </div>
           </div>
         </div>
 
@@ -147,34 +130,7 @@ export const RoleHeader: React.FC = () => {
         </div>
       </div>
 
-      {/* Mobile Drawer Persona Switcher */}
-      {mobileMenuOpen && (
-        <div className="md:hidden pt-3 mt-3 border-t border-slate-800/80 animate-fadeIn space-y-2">
-          <span className="text-[10px] font-mono font-bold text-slate-400 uppercase tracking-wider block px-1">
-            Select Persona:
-          </span>
-          <div className="grid grid-cols-2 gap-2">
-            {ROLES_INFO.map((r) => {
-              const Icon = r.icon;
-              const isActive = activeRole === r.role;
-              return (
-                <button
-                  key={r.role}
-                  onClick={() => handleRoleChange(r.role, r.defaultRoute)}
-                  className={`flex items-center space-x-2 p-2.5 rounded-xl text-xs font-semibold border transition-all ${
-                    isActive
-                      ? 'bg-[#3b82f6] border-[#3b82f6] text-white'
-                      : 'bg-[#1a2436] border-slate-800 text-slate-300 hover:bg-slate-800'
-                  }`}
-                >
-                  <Icon className="w-4 h-4" />
-                  <span>{r.role}</span>
-                </button>
-              );
-            })}
-          </div>
-        </div>
-      )}
+
 
       {/* Permission Matrix Modal */}
       {showMatrix && (

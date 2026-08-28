@@ -2,6 +2,7 @@
 
 import React, { useState } from 'react';
 import { useLMS } from '../context/LMSContext';
+import { useToast } from '../context/ToastContext';
 import { Course } from '../types';
 import { LessonViewer } from './LessonViewer';
 import { QuizModal } from './QuizModal';
@@ -23,6 +24,7 @@ interface StudentDashboardProps {
 }
 
 export const StudentDashboard: React.FC<StudentDashboardProps> = ({ activeTab, setActiveTab }) => {
+  const toast = useToast();
   const { courses, progress, quizAttempts, currentUser, enrollInCourse, getCourseProgress, activeRole } = useLMS();
 
   const [searchTerm, setSearchTerm] = useState('');
@@ -314,10 +316,10 @@ export const StudentDashboard: React.FC<StudentDashboardProps> = ({ activeTab, s
                     ) : (
                       <button
                         onClick={() => {
-                          if (activeRole === 'Student') {
+                          if (currentUser?.role === 'Student' || activeRole === 'Student') {
                             enrollInCourse(course.id);
                           } else {
-                            alert('Switch to the Student role using the top header to enroll as a student.');
+                            toast.info('Student Role Required', 'Log in as a Student to enroll in courses.');
                           }
                         }}
                         className="w-full py-2.5 px-4 bg-[#3b82f6] hover:bg-blue-600 text-white rounded-xl text-xs font-bold shadow-md shadow-blue-500/20 flex items-center justify-center space-x-2"

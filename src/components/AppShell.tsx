@@ -1,13 +1,20 @@
 'use client';
 
 import React from 'react';
-import { usePathname } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 import { RoleHeader } from './RoleHeader';
 import { Navbar } from './Navbar';
+import { useLMS } from '../context/LMSContext';
+import { useToast } from '../context/ToastContext';
 
 export const AppShell: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const pathname = usePathname();
+  const router = useRouter();
+  const toast = useToast();
+  const { isAuthenticated, isLoading, currentUser } = useLMS();
+
   const isLandingPage = pathname === '/';
+  const isAuthPage = pathname === '/login' || pathname === '/register';
   const [isScrolled, setIsScrolled] = React.useState(false);
 
   React.useEffect(() => {
@@ -22,6 +29,31 @@ export const AppShell: React.FC<{ children: React.ReactNode }> = ({ children }) 
     window.addEventListener('scroll', handleScroll, { passive: true });
     return () => window.removeEventListener('scroll', handleScroll);
   }, [isLandingPage]);
+
+  // Basic Unauthenticated Route Protection only
+  React.useEffect(() => {
+    if (isLoading) return;
+
+    // If unauthenticated visitor tries to visit internal dashboard routes, send to login
+    if (!isAuthenticated && !isLandingPage && !isAuthPage) {
+      router.push('/login');
+    }
+  }, [isAuthenticated, isLoading, isLandingPage, isAuthPage, router]);
+
+  // Standalone Auth Pages (Login & Register have their own full-page luxury UI)
+  if (isAuthPage) {
+    return <>{children}</>;
+  }
+
+  // If loading session on protected routes, show smooth dark loader
+  if (!isLandingPage && !isAuthPage && (isLoading || !isAuthenticated)) {
+    return (
+      <div className="min-h-screen bg-[#080c14] flex flex-col items-center justify-center space-y-4">
+        <div className="w-10 h-10 border-3 border-cyan-400 border-t-transparent rounded-full animate-spin" />
+        <span className="text-xs font-mono text-slate-400">Verifying security session...</span>
+      </div>
+    );
+  }
 
   if (isLandingPage) {
     return (
@@ -178,7 +210,13 @@ export const AppShell: React.FC<{ children: React.ReactNode }> = ({ children }) 
                 <p className="text-xs text-slate-400">
                   Get updates when new production blueprints and courses are released.
                 </p>
-                <form className="space-y-2" onSubmit={(e) => { e.preventDefault(); alert('Thank you for subscribing to SaaSPro updates!'); }}>
+                <form
+                  className="space-y-2"
+                  onSubmit={(e) => {
+                    e.preventDefault();
+                    toast.success('Subscribed!', 'Thank you for subscribing to SaaSPro updates.');
+                  }}
+                >
                   <input
                     type="email"
                     required

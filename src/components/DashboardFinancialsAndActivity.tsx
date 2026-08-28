@@ -2,10 +2,12 @@
 
 import React from 'react';
 import { useLMS } from '../context/LMSContext';
+import { useToast } from '../context/ToastContext';
 import { Plus, MessageSquare } from 'lucide-react';
 
 export const DashboardFinancialsAndActivity: React.FC = () => {
   const { users, progress, quizAttempts, courses } = useLMS();
+  const toast = useToast();
 
   // Dynamically map real activities from database progress & quiz attempts
   const activities = [
@@ -123,7 +125,7 @@ export const DashboardFinancialsAndActivity: React.FC = () => {
         <div className="space-y-2.5 pt-4 border-t border-slate-800/80">
           <span className="text-[10px] uppercase font-bold text-slate-400 tracking-wider">Quick Actions</span>
           <button
-            onClick={() => alert('Platform connected directly to Strapi 5 & Neon PostgreSQL.')}
+            onClick={() => toast.info('System Status', 'Platform connected directly to Strapi 5 & Neon PostgreSQL.')}
             className="w-full py-2.5 px-4 bg-[#3b82f6] hover:bg-blue-600 text-white rounded-xl text-xs font-bold flex items-center justify-center space-x-2 shadow-md shadow-blue-500/20"
           >
             <Plus className="w-4 h-4" />
