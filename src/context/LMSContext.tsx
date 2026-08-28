@@ -77,7 +77,7 @@ export const LMSProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const [authUser, setAuthUser] = useState<User | null>(null);
   const isAuthenticated = !!authToken && !!authUser;
 
-  const API_URL = typeof window !== 'undefined' ? '/strapi-api' : (process.env.NEXT_PUBLIC_STRAPI_URL || 'http://localhost:1337/api');
+  const API_URL = process.env.NEXT_PUBLIC_STRAPI_URL || 'http://localhost:1337';
 
   // Current active user: preference given to authenticated user, else user from fetched database
   const currentUser: User =
@@ -107,9 +107,8 @@ export const LMSProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         headers['x-user-id'] = currentUser.id;
       }
 
-      // Format path appropriately: if path starts with /api/, route through proxy
-      const cleanPath = path.startsWith('/api') ? path.replace(/^\/api/, '') : path;
-      const targetUrl = `${API_URL}${cleanPath.startsWith('/') ? cleanPath : `/${cleanPath}`}`;
+      const cleanPath = path.startsWith('/') ? path : `/${path}`;
+      const targetUrl = `${API_URL}${cleanPath}`;
 
       const res = await fetch(targetUrl, {
         method,
