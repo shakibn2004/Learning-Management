@@ -56,78 +56,269 @@ export const LMSProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const [quizAttempts, setQuizAttempts] = useState<QuizAttempt[]>(INITIAL_QUIZ_ATTEMPTS);
   const [activeRole, setActiveRole] = useState<UserRole>('Admin');
 
-  // Load persisted state if exists
+  const API_URL = process.env.NEXT_PUBLIC_STRAPI_URL || 'http://localhost:1337';
+
+  // Current active user matching current selected role
+  const currentUser = users.find((u) => u.role === activeRole) || users[0];
+
+  const strapiRequest = async (path: string, method = 'GET', body?: any) => {
+    try {
+      const headers: Record<string, string> = {
+        'Content-Type': 'application/json',
+      };
+      if (activeRole) {
+        headers['x-user-role'] = activeRole;
+      }
+      if (currentUser?.id) {
+        headers['x-user-id'] = currentUser.id;
+      }
+
+      const res = await fetch(`${API_URL}${path}`, {
+        method,
+        headers,
+        body: body ? JSON.stringify(body) : undefined,
+      });
+
+      if (!res.ok) {
+        const errorData = await res.json().catch(() => ({}));
+        throw new Error(errorData.error || `HTTP error ${res.status}`);
+      }
+
+      return await res.json();
+    } catch (err) {
+      console.error(`Strapi request failed on ${method} ${path}:`, err);
+      throw err;
+    }
+  };
+
+  // Load state & fetch courses from Strapi API
   useEffect(() => {
+    const initData = async () => {
+      try {
+        // 1. Fetch Users
+        const usersRes = await fetch(`${API_URL}/api/lms-users`);
+        if (usersRes.ok) {
+          const usersJson = await usersRes.json();
+          if (usersJson?.data) {
+            setUsers(
+              usersJson.data.map((u: any) => ({
+                id: u.documentId || String(u.id),
+                name: u.name,
+                email: u.email,
+                role: u.role,
+                avatar: u.avatar || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=200&q=80',
+                enrolledCourseIds: u.enrolledCourseIds || [],
+                createdAt: u.createdAt,
+              }))
+            );
+          }
+        }
+
+        // 2. Fetch Courses with populated lessons and quiz
+        const coursesRes = await fetch(`${API_URL}/api/courses?populate[lessons]=*&populate[quiz]=*`);
+        if (coursesRes.ok) {
+          const coursesJson = await coursesRes.json();
+          if (coursesJson?.data) {
+            const mapped = coursesJson.data.map((c: any) => ({
+              id: c.documentId || String(c.id),
+              title: c.title || '',
+              subtitle: c.subtitle || '',
+              description: c.description || '',
+              category: c.category || 'Web Development',
+              level: c.level || 'Intermediate',
+              coverImage: c.coverImage || 'https://images.unsplash.com/photo-1516321318423-f06f85e504b3?auto=format&fit=crop&w=800&q=80',
+              instructorId: c.instructorId || '',
+              instructorName: c.instructorName || '',
+              price: Number(c.price) || 0,
+              published: c.published !== undefined ? c.published : true,
+              lessons: (c.lessons || []).map((l: any) => ({
+                id: l.documentId || String(l.id),
+                courseId: c.documentId || String(c.id),
+                title: l.title,
+                durationMinutes: Number(l.durationMinutes) || 0,
+                type: l.type,
+                videoUrl: l.videoUrl,
+                content: l.content,
+                order: Number(l.order) || 1,
+              })).sort((a: any, b: any) => a.order - b.order),
+              quiz: c.quiz ? {
+                id: c.quiz.documentId || String(c.quiz.id),
+                courseId: c.documentId || String(c.id),
+                title: c.quiz.title,
+                description: c.quiz.description,
+                passingScore: Number(c.quiz.passingScore) || 70,
+                questions: c.quiz.questions || [],
+              } : undefined,
+              createdAt: c.createdAt || new Date().toISOString(),
+            }));
+            setCourses(mapped);
+          }
+        }
+
+        // 3. Fetch progress
+        const progRes = await fetch(`${API_URL}/api/user-course-progresses`);
+        if (progRes.ok) {
+          const progJson = await progRes.json();
+          if (progJson?.data) {
+            setProgress(
+              progJson.data.map((p: any) => ({
+                id: p.documentId || String(p.id),
+                userId: p.userId,
+                courseId: p.courseId,
+                completedLessonIds: p.completedLessonIds || [],
+                lastAccessedLessonId: p.lastAccessedLessonId,
+                updatedAt: p.updatedAt || new Date().toISOString(),
+              }))
+            );
+          }
+        }
+
+        // 4. Fetch blogs
+        const blogsRes = await fetch(`${API_URL}/api/blog-posts`);
+        if (blogsRes.ok) {
+          const blogsJson = await blogsRes.json();
+          if (blogsJson?.data) {
+            setBlogPosts(
+              blogsJson.data.map((b: any) => ({
+                id: b.documentId || String(b.id),
+                title: b.title,
+                excerpt: b.excerpt,
+                content: b.content,
+                coverImage: b.coverImage,
+                authorId: b.authorId,
+                authorName: b.authorName,
+                authorRole: b.authorRole,
+                status: b.status,
+                publishedAt: b.publishedAt,
+                createdAt: b.createdAt,
+                tags: b.tags || [],
+              }))
+            );
+          }
+        }
+
+        // 5. Fetch quiz attempts
+        const attemptsRes = await fetch(`${API_URL}/api/quiz-attempts`);
+        if (attemptsRes.ok) {
+          const attemptsJson = await attemptsRes.json();
+          if (attemptsJson?.data) {
+            setQuizAttempts(
+              attemptsJson.data.map((a: any) => ({
+                id: a.documentId || String(a.id),
+                quizId: a.quizId,
+                studentId: a.studentId,
+                scorePercentage: Number(a.scorePercentage) || 0,
+                passed: a.passed,
+                answers: a.answers || {},
+                completedAt: a.completedAt,
+              }))
+            );
+          }
+        }
+      } catch (err) {
+        console.error('Failed to initialize LMS data from Strapi API:', err);
+      }
+    };
+
+    initData();
+
+    // Load active role from localStorage
     try {
       const saved = localStorage.getItem(LOCAL_STORAGE_KEY);
       if (saved) {
         const parsed = JSON.parse(saved);
-        if (parsed.users) setUsers(parsed.users);
-        if (parsed.courses) setCourses(parsed.courses);
-        if (parsed.progress) setProgress(parsed.progress);
-        if (parsed.blogPosts) setBlogPosts(parsed.blogPosts);
-        if (parsed.quizAttempts) setQuizAttempts(parsed.quizAttempts);
-        if (parsed.activeRole) setActiveRole(parsed.activeRole);
+        if (parsed.activeRole) {
+          setActiveRole(parsed.activeRole);
+        }
       }
     } catch (e) {
-      console.warn('Failed to load local LMS state', e);
+      console.warn('Failed to load active role from local storage', e);
     }
   }, []);
 
-  // Save state to localStorage on changes
+  // Save activeRole to localStorage on changes
   useEffect(() => {
     try {
       localStorage.setItem(
         LOCAL_STORAGE_KEY,
-        JSON.stringify({ users, courses, progress, blogPosts, quizAttempts, activeRole })
+        JSON.stringify({ activeRole })
       );
     } catch (e) {
-      console.warn('Failed to persist LMS state', e);
+      console.warn('Failed to persist activeRole', e);
     }
-  }, [users, courses, progress, blogPosts, quizAttempts, activeRole]);
-
-  // Current active user matching current selected role
-  const currentUser = users.find((u) => u.role === activeRole) || users[0];
+  }, [activeRole]);
 
   const switchRole = (role: UserRole) => {
     setActiveRole(role);
   };
 
-  const updateUserRole = (userId: string, newRole: UserRole) => {
-    setUsers((prev) =>
-      prev.map((u) => (u.id === userId ? { ...u, role: newRole } : u))
-    );
+  const updateUserRole = async (userId: string, newRole: UserRole) => {
+    try {
+      const res = await strapiRequest(`/api/lms-users/${userId}`, 'PUT', {
+        data: { role: newRole }
+      });
+      if (res?.data) {
+        setUsers((prev) =>
+          prev.map((u) => (u.id === userId ? { ...u, role: newRole } : u))
+        );
+      }
+    } catch (err) {
+      alert(`Error updating user role: ${err instanceof Error ? err.message : String(err)}`);
+    }
   };
 
-  const enrollInCourse = (courseId: string) => {
+  const enrollInCourse = async (courseId: string) => {
     if (!currentUser) return;
-    setUsers((prev) =>
-      prev.map((u) => {
-        if (u.id === currentUser.id) {
-          const already = u.enrolledCourseIds.includes(courseId);
-          return {
-            ...u,
-            enrolledCourseIds: already ? u.enrolledCourseIds : [...u.enrolledCourseIds, courseId],
-          };
-        }
-        return u;
-      })
-    );
+    try {
+      const already = currentUser.enrolledCourseIds.includes(courseId);
+      const updatedCourseIds = already ? currentUser.enrolledCourseIds : [...currentUser.enrolledCourseIds, courseId];
 
-    // Initialize progress entry if not exists
-    setProgress((prev) => {
-      const existing = prev.find((p) => p.userId === currentUser.id && p.courseId === courseId);
-      if (existing) return prev;
-      return [
-        ...prev,
-        {
-          userId: currentUser.id,
-          courseId,
-          completedLessonIds: [],
-          updatedAt: new Date().toISOString(),
-        },
-      ];
-    });
+      // Update user enrolled courses
+      const userRes = await strapiRequest(`/api/lms-users/${currentUser.id}`, 'PUT', {
+        data: { enrolledCourseIds: updatedCourseIds }
+      });
+
+      if (userRes?.data) {
+        setUsers((prev) =>
+          prev.map((u) => {
+            if (u.id === currentUser.id) {
+              return {
+                ...u,
+                enrolledCourseIds: updatedCourseIds,
+              };
+            }
+            return u;
+          })
+        );
+      }
+
+      // Initialize progress entry if not exists
+      const existingProg = progress.find((p) => p.userId === currentUser.id && p.courseId === courseId);
+      if (!existingProg) {
+        const progRes = await strapiRequest('/api/user-course-progresses', 'POST', {
+          data: {
+            userId: currentUser.id,
+            courseId,
+            completedLessonIds: [],
+          }
+        });
+        if (progRes?.data) {
+          const returnedProg = progRes.data;
+          setProgress((prev) => [
+            ...prev,
+            {
+              id: returnedProg.documentId || String(returnedProg.id),
+              userId: currentUser.id,
+              courseId,
+              completedLessonIds: [],
+              updatedAt: new Date().toISOString(),
+            }
+          ]);
+        }
+      }
+    } catch (err) {
+      alert(`Error enrolling in course: ${err instanceof Error ? err.message : String(err)}`);
+    }
   };
 
   const getCourseProgress = (userId: string, courseId: string): number => {
@@ -146,98 +337,271 @@ export const LMSProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     return userProg ? userProg.completedLessonIds.includes(lessonId) : false;
   };
 
-  const toggleLessonComplete = (courseId: string, lessonId: string) => {
+  const toggleLessonComplete = async (courseId: string, lessonId: string) => {
     if (!currentUser) return;
-    setProgress((prev) => {
-      const existingIndex = prev.findIndex(
+    try {
+      const existingIndex = progress.findIndex(
         (p) => p.userId === currentUser.id && p.courseId === courseId
       );
+      
+      let res;
+      let newCompleted: string[] = [];
+
       if (existingIndex > -1) {
-        const item = prev[existingIndex];
+        const item = progress[existingIndex];
         const isComp = item.completedLessonIds.includes(lessonId);
-        const newCompleted = isComp
+        newCompleted = isComp
           ? item.completedLessonIds.filter((id) => id !== lessonId)
           : [...item.completedLessonIds, lessonId];
-        const updated = [...prev];
-        updated[existingIndex] = {
-          ...item,
-          completedLessonIds: newCompleted,
-          lastAccessedLessonId: lessonId,
-          updatedAt: new Date().toISOString(),
-        };
-        return updated;
+        
+        const progressDocId = (item as any).id;
+
+        if (progressDocId) {
+          res = await strapiRequest(`/api/user-course-progresses/${progressDocId}`, 'PUT', {
+            data: {
+              completedLessonIds: newCompleted,
+              lastAccessedLessonId: lessonId,
+            }
+          });
+        } else {
+          res = await strapiRequest('/api/user-course-progresses', 'POST', {
+            data: {
+              userId: currentUser.id,
+              courseId,
+              completedLessonIds: newCompleted,
+              lastAccessedLessonId: lessonId,
+            }
+          });
+        }
       } else {
-        return [
-          ...prev,
-          {
+        newCompleted = [lessonId];
+        res = await strapiRequest('/api/user-course-progresses', 'POST', {
+          data: {
             userId: currentUser.id,
             courseId,
-            completedLessonIds: [lessonId],
+            completedLessonIds: newCompleted,
             lastAccessedLessonId: lessonId,
-            updatedAt: new Date().toISOString(),
-          },
-        ];
-      }
-    });
-  };
-
-  const saveCourse = (courseData: Course) => {
-    setCourses((prev) => {
-      const idx = prev.findIndex((c) => c.id === courseData.id);
-      if (idx > -1) {
-        const updated = [...prev];
-        updated[idx] = courseData;
-        return updated;
-      }
-      return [courseData, ...prev];
-    });
-  };
-
-  const deleteCourse = (courseId: string) => {
-    setCourses((prev) => prev.filter((c) => c.id !== courseId));
-  };
-
-  const saveLesson = (courseId: string, lessonData: Lesson) => {
-    setCourses((prev) =>
-      prev.map((c) => {
-        if (c.id === courseId) {
-          const existingLessons = c.lessons || [];
-          const lIdx = existingLessons.findIndex((l) => l.id === lessonData.id);
-          let newLessons = [...existingLessons];
-          if (lIdx > -1) {
-            newLessons[lIdx] = lessonData;
-          } else {
-            newLessons.push(lessonData);
           }
-          return { ...c, lessons: newLessons };
-        }
-        return c;
-      })
-    );
-  };
+        });
+      }
 
-  const deleteLesson = (courseId: string, lessonId: string) => {
-    setCourses((prev) =>
-      prev.map((c) => {
-        if (c.id === courseId) {
-          return {
-            ...c,
-            lessons: c.lessons.filter((l) => l.id !== lessonId),
+      if (res?.data) {
+        const returnedProg = res.data;
+        setProgress((prev) => {
+          const idx = prev.findIndex(
+            (p) => p.userId === currentUser.id && p.courseId === courseId
+          );
+          const updatedItem = {
+            id: returnedProg.documentId || String(returnedProg.id),
+            userId: currentUser.id,
+            courseId,
+            completedLessonIds: newCompleted,
+            lastAccessedLessonId: lessonId,
+            updatedAt: returnedProg.updatedAt || new Date().toISOString(),
           };
-        }
-        return c;
-      })
-    );
+          if (idx > -1) {
+            const copy = [...prev];
+            copy[idx] = updatedItem;
+            return copy;
+          } else {
+            return [...prev, updatedItem];
+          }
+        });
+      }
+    } catch (err) {
+      alert(`Error updating lesson progress: ${err instanceof Error ? err.message : String(err)}`);
+    }
   };
 
-  const saveQuiz = (courseId: string, quizData: Quiz) => {
-    setCourses((prev) =>
-      prev.map((c) => (c.id === courseId ? { ...c, quiz: quizData } : c))
-    );
+  const saveCourse = async (courseData: Course) => {
+    try {
+      const isEdit = courses.some((c) => c.id === courseData.id);
+      let res;
+      if (isEdit) {
+        res = await strapiRequest(`/api/courses/${courseData.id}`, 'PUT', {
+          data: {
+            title: courseData.title,
+            subtitle: courseData.subtitle,
+            description: courseData.description,
+            category: courseData.category,
+            level: courseData.level,
+            coverImage: courseData.coverImage,
+            instructorId: courseData.instructorId,
+            instructorName: courseData.instructorName,
+            price: courseData.price,
+            published: courseData.published,
+          }
+        });
+      } else {
+        res = await strapiRequest('/api/courses', 'POST', {
+          data: {
+            documentId: courseData.id,
+            title: courseData.title,
+            subtitle: courseData.subtitle,
+            description: courseData.description,
+            category: courseData.category,
+            level: courseData.level,
+            coverImage: courseData.coverImage,
+            instructorId: courseData.instructorId,
+            instructorName: courseData.instructorName,
+            price: courseData.price,
+            published: courseData.published,
+          }
+        });
+      }
+
+      if (res?.data) {
+        const returnedCourse = res.data;
+        const newCourse: Course = {
+          ...courseData,
+          id: returnedCourse.documentId || String(returnedCourse.id),
+          createdAt: returnedCourse.createdAt || courseData.createdAt,
+        };
+        setCourses((prev) => {
+          const idx = prev.findIndex((c) => c.id === newCourse.id);
+          if (idx > -1) {
+            const copy = [...prev];
+            copy[idx] = newCourse;
+            return copy;
+          }
+          return [newCourse, ...prev];
+        });
+      }
+    } catch (err) {
+      alert(`Error saving course: ${err instanceof Error ? err.message : String(err)}`);
+    }
+  };
+
+  const deleteCourse = async (courseId: string) => {
+    try {
+      await strapiRequest(`/api/courses/${courseId}`, 'DELETE');
+      setCourses((prev) => prev.filter((c) => c.id !== courseId));
+    } catch (err) {
+      alert(`Error deleting course: ${err instanceof Error ? err.message : String(err)}`);
+    }
+  };
+
+  const saveLesson = async (courseId: string, lessonData: Lesson) => {
+    try {
+      const course = courses.find((c) => c.id === courseId);
+      const isEdit = course?.lessons.some((l) => l.id === lessonData.id);
+      let res;
+      if (isEdit) {
+        res = await strapiRequest(`/api/lessons/${lessonData.id}`, 'PUT', {
+          data: {
+            title: lessonData.title,
+            durationMinutes: lessonData.durationMinutes,
+            type: lessonData.type,
+            videoUrl: lessonData.videoUrl,
+            content: lessonData.content,
+            order: lessonData.order,
+          }
+        });
+      } else {
+        res = await strapiRequest('/api/lessons', 'POST', {
+          data: {
+            documentId: lessonData.id,
+            title: lessonData.title,
+            durationMinutes: lessonData.durationMinutes,
+            type: lessonData.type,
+            videoUrl: lessonData.videoUrl,
+            content: lessonData.content,
+            order: lessonData.order,
+            course: courseId,
+          }
+        });
+      }
+
+      if (res?.data) {
+        const returnedLesson = res.data;
+        const finalLesson: Lesson = {
+          ...lessonData,
+          id: returnedLesson.documentId || String(returnedLesson.id),
+        };
+        setCourses((prev) =>
+          prev.map((c) => {
+            if (c.id === courseId) {
+              const existingLessons = c.lessons || [];
+              const lIdx = existingLessons.findIndex((l) => l.id === finalLesson.id);
+              let newLessons = [...existingLessons];
+              if (lIdx > -1) {
+                newLessons[lIdx] = finalLesson;
+              } else {
+                newLessons.push(finalLesson);
+              }
+              return { ...c, lessons: newLessons.sort((a, b) => a.order - b.order) };
+            }
+            return c;
+          })
+        );
+      }
+    } catch (err) {
+      alert(`Error saving lesson: ${err instanceof Error ? err.message : String(err)}`);
+    }
+  };
+
+  const deleteLesson = async (courseId: string, lessonId: string) => {
+    try {
+      await strapiRequest(`/api/lessons/${lessonId}`, 'DELETE');
+      setCourses((prev) =>
+        prev.map((c) => {
+          if (c.id === courseId) {
+            return {
+              ...c,
+              lessons: c.lessons.filter((l) => l.id !== lessonId),
+            };
+          }
+          return c;
+        })
+      );
+    } catch (err) {
+      alert(`Error deleting lesson: ${err instanceof Error ? err.message : String(err)}`);
+    }
+  };
+
+  const saveQuiz = async (courseId: string, quizData: Quiz) => {
+    try {
+      const course = courses.find((c) => c.id === courseId);
+      const hasQuiz = !!course?.quiz;
+      let res;
+      if (hasQuiz) {
+        res = await strapiRequest(`/api/quizzes/${quizData.id}`, 'PUT', {
+          data: {
+            title: quizData.title,
+            description: quizData.description,
+            passingScore: quizData.passingScore,
+            questions: quizData.questions,
+          }
+        });
+      } else {
+        res = await strapiRequest('/api/quizzes', 'POST', {
+          data: {
+            documentId: quizData.id,
+            title: quizData.title,
+            description: quizData.description,
+            passingScore: quizData.passingScore,
+            questions: quizData.questions,
+            course: courseId,
+          }
+        });
+      }
+
+      if (res?.data) {
+        const returnedQuiz = res.data;
+        const finalQuiz: Quiz = {
+          ...quizData,
+          id: returnedQuiz.documentId || String(returnedQuiz.id),
+        };
+        setCourses((prev) =>
+          prev.map((c) => (c.id === courseId ? { ...c, quiz: finalQuiz } : c))
+        );
+      }
+    } catch (err) {
+      alert(`Error saving quiz: ${err instanceof Error ? err.message : String(err)}`);
+    }
   };
 
   const submitQuizAttempt = (quizId: string, answers: Record<string, string>): QuizAttempt => {
-    // Find quiz across courses
     let foundQuiz: Quiz | undefined;
     for (const c of courses) {
       if (c.quiz && c.quiz.id === quizId) {
@@ -261,8 +625,9 @@ export const LMSProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     const passingScore = foundQuiz ? foundQuiz.passingScore : 70;
     const passed = scorePercentage >= passingScore;
 
+    const attemptId = `attempt-${Date.now()}`;
     const attempt: QuizAttempt = {
-      id: `attempt-${Date.now()}`,
+      id: attemptId,
       quizId,
       studentId: currentUser.id,
       scorePercentage,
@@ -271,40 +636,136 @@ export const LMSProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       completedAt: new Date().toISOString(),
     };
 
+    // Save async to Strapi backend
+    strapiRequest('/api/quiz-attempts', 'POST', {
+      data: {
+        documentId: attemptId,
+        quizId,
+        studentId: currentUser.id,
+        scorePercentage,
+        passed,
+        answers,
+        completedAt: attempt.completedAt,
+      }
+    }).then((res) => {
+      if (res?.data) {
+        const returnedAttempt = res.data;
+        setQuizAttempts((prev) => [
+          {
+            ...attempt,
+            id: returnedAttempt.documentId || String(returnedAttempt.id),
+          },
+          ...prev.filter((qa) => qa.id !== attemptId),
+        ]);
+      }
+    }).catch((err) => {
+      console.error('Failed to save quiz attempt to Strapi:', err);
+    });
+
     setQuizAttempts((prev) => [attempt, ...prev]);
     return attempt;
   };
 
-  const saveBlogPost = (post: BlogPost) => {
-    setBlogPosts((prev) => {
-      const idx = prev.findIndex((p) => p.id === post.id);
-      if (idx > -1) {
-        const copy = [...prev];
-        copy[idx] = post;
-        return copy;
+  const saveBlogPost = async (post: BlogPost) => {
+    try {
+      const isEdit = blogPosts.some((b) => b.id === post.id);
+      let res;
+      if (isEdit) {
+        res = await strapiRequest(`/api/blog-posts/${post.id}`, 'PUT', {
+          data: {
+            title: post.title,
+            excerpt: post.excerpt,
+            content: post.content,
+            coverImage: post.coverImage,
+            authorId: post.authorId,
+            authorName: post.authorName,
+            authorRole: post.authorRole,
+            status: post.status,
+            publishedAt: post.publishedAt,
+            tags: post.tags,
+          }
+        });
+      } else {
+        res = await strapiRequest('/api/blog-posts', 'POST', {
+          data: {
+            documentId: post.id,
+            title: post.title,
+            excerpt: post.excerpt,
+            content: post.content,
+            coverImage: post.coverImage,
+            authorId: post.authorId,
+            authorName: post.authorName,
+            authorRole: post.authorRole,
+            status: post.status,
+            publishedAt: post.publishedAt || (post.status === 'Published' ? new Date().toISOString() : null),
+            tags: post.tags,
+          }
+        });
       }
-      return [post, ...prev];
-    });
+
+      if (res?.data) {
+        const returnedPost = res.data;
+        const newPost: BlogPost = {
+          ...post,
+          id: returnedPost.documentId || String(returnedPost.id),
+          publishedAt: returnedPost.publishedAt,
+          createdAt: returnedPost.createdAt || post.createdAt,
+        };
+        setBlogPosts((prev) => {
+          const idx = prev.findIndex((b) => b.id === newPost.id);
+          if (idx > -1) {
+            const copy = [...prev];
+            copy[idx] = newPost;
+            return copy;
+          }
+          return [newPost, ...prev];
+        });
+      }
+    } catch (err) {
+      alert(`Error saving blog post: ${err instanceof Error ? err.message : String(err)}`);
+    }
   };
 
-  const deleteBlogPost = (postId: string) => {
-    setBlogPosts((prev) => prev.filter((p) => p.id !== postId));
+  const deleteBlogPost = async (postId: string) => {
+    try {
+      await strapiRequest(`/api/blog-posts/${postId}`, 'DELETE');
+      setBlogPosts((prev) => prev.filter((p) => p.id !== postId));
+    } catch (err) {
+      alert(`Error deleting blog post: ${err instanceof Error ? err.message : String(err)}`);
+    }
   };
 
-  const toggleBlogStatus = (postId: string) => {
-    setBlogPosts((prev) =>
-      prev.map((p) => {
-        if (p.id === postId) {
-          const newStatus = p.status === 'Draft' ? 'Published' : 'Draft';
-          return {
-            ...p,
-            status: newStatus,
-            publishedAt: newStatus === 'Published' ? new Date().toISOString() : p.publishedAt,
-          };
+  const toggleBlogStatus = async (postId: string) => {
+    try {
+      const post = blogPosts.find((p) => p.id === postId);
+      if (!post) return;
+      const newStatus = post.status === 'Draft' ? 'Published' : 'Draft';
+      const publishedAt = newStatus === 'Published' ? new Date().toISOString() : null;
+
+      const res = await strapiRequest(`/api/blog-posts/${postId}`, 'PUT', {
+        data: {
+          status: newStatus,
+          publishedAt,
         }
-        return p;
-      })
-    );
+      });
+
+      if (res?.data) {
+        setBlogPosts((prev) =>
+          prev.map((p) => {
+            if (p.id === postId) {
+              return {
+                ...p,
+                status: newStatus,
+                publishedAt: publishedAt || undefined,
+              };
+            }
+            return p;
+          })
+        );
+      }
+    } catch (err) {
+      alert(`Error toggling blog status: ${err instanceof Error ? err.message : String(err)}`);
+    }
   };
 
   const canPerformAction = (action: PermissionAction, targetOwnerId?: string): boolean => {
