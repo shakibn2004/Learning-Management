@@ -77,7 +77,10 @@ export const LMSProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const [authUser, setAuthUser] = useState<User | null>(null);
   const isAuthenticated = !!authToken && !!authUser;
 
-  const API_URL = process.env.NEXT_PUBLIC_STRAPI_URL || 'http://localhost:1337';
+  // Use Next.js proxy in browser to avoid CORS/IP issues. Use absolute URL in SSR.
+  const API_URL = typeof window !== 'undefined'
+    ? '/strapi-api'
+    : (process.env.NEXT_PUBLIC_STRAPI_URL || 'http://localhost:1337/api');
 
   // Current active user: preference given to authenticated user, else user from fetched database
   const currentUser: User =
@@ -107,7 +110,15 @@ export const LMSProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         headers['x-user-id'] = currentUser.id;
       }
 
-      const cleanPath = path.startsWith('/') ? path : `/${path}`;
+      // If path starts with /api, remove it for the proxy rewrite (/strapi-api -> /api)
+      let cleanPath = path;
+      if (cleanPath.startsWith('/api')) {
+        cleanPath = cleanPath.replace(/^\/api/, '');
+      }
+      if (!cleanPath.startsWith('/')) {
+        cleanPath = `/${cleanPath}`;
+      }
+      
       const targetUrl = `${API_URL}${cleanPath}`;
 
       const res = await fetch(targetUrl, {
