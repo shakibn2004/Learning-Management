@@ -9,6 +9,14 @@ const nextConfig = {
       },
     ],
   },
+  async rewrites() {
+    return [
+      {
+        source: '/strapi-api/:path*',
+        destination: 'http://localhost:1337/api/:path*',
+      },
+    ];
+  },
 };
 
 export default nextConfig;

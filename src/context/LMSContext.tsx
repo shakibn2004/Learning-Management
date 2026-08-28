@@ -77,7 +77,7 @@ export const LMSProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const [authUser, setAuthUser] = useState<User | null>(null);
   const isAuthenticated = !!authToken && !!authUser;
 
-  const API_URL = process.env.NEXT_PUBLIC_STRAPI_URL || 'http://localhost:1337';
+  const API_URL = typeof window !== 'undefined' ? '/strapi-api' : (process.env.NEXT_PUBLIC_STRAPI_URL || 'http://localhost:1337/api');
 
   // Current active user: preference given to authenticated user, else user from fetched database
   const currentUser: User =
@@ -107,7 +107,11 @@ export const LMSProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         headers['x-user-id'] = currentUser.id;
       }
 
-      const res = await fetch(`${API_URL}${path}`, {
+      // Format path appropriately: if path starts with /api/, route through proxy
+      const cleanPath = path.startsWith('/api') ? path.replace(/^\/api/, '') : path;
+      const targetUrl = `${API_URL}${cleanPath.startsWith('/') ? cleanPath : `/${cleanPath}`}`;
+
+      const res = await fetch(targetUrl, {
         method,
         headers,
         body: body ? JSON.stringify(body) : undefined,
@@ -145,124 +149,109 @@ export const LMSProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         }
 
         // 1. Fetch Users
-        const usersRes = await fetch(`${API_URL}/api/lms-users`);
-        if (usersRes.ok) {
-          const usersJson = await usersRes.json();
-          if (usersJson?.data) {
-            setUsers(
-              usersJson.data.map((u: any) => ({
-                id: u.documentId || String(u.id),
-                name: u.name,
-                email: u.email,
-                role: u.role,
-                avatar: u.avatar || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=200&q=80',
-                enrolledCourseIds: u.enrolledCourseIds || [],
-                createdAt: u.createdAt,
-              }))
-            );
-          }
+        const usersRes = await strapiRequest('/api/lms-users');
+        if (usersRes?.data) {
+          setUsers(
+            usersRes.data.map((u: any) => ({
+              id: u.documentId || String(u.id),
+              name: u.name,
+              email: u.email,
+              role: u.role,
+              avatar: u.avatar || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=200&q=80',
+              enrolledCourseIds: u.enrolledCourseIds || [],
+              createdAt: u.createdAt,
+            }))
+          );
         }
 
         // 2. Fetch Courses with populated lessons and quiz
-        const coursesRes = await fetch(`${API_URL}/api/courses?populate[lessons]=*&populate[quiz]=*`);
-        if (coursesRes.ok) {
-          const coursesJson = await coursesRes.json();
-          if (coursesJson?.data) {
-            const mapped = coursesJson.data.map((c: any) => ({
-              id: c.documentId || String(c.id),
-              title: c.title || '',
-              subtitle: c.subtitle || '',
-              description: c.description || '',
-              category: c.category || 'Web Development',
-              level: c.level || 'Intermediate',
-              coverImage: c.coverImage || 'https://images.unsplash.com/photo-1516321318423-f06f85e504b3?auto=format&fit=crop&w=800&q=80',
-              instructorId: c.instructorId || '',
-              instructorName: c.instructorName || '',
-              price: Number(c.price) || 0,
-              published: c.published !== undefined ? c.published : true,
-              lessons: (c.lessons || []).map((l: any) => ({
-                id: l.documentId || String(l.id),
-                courseId: c.documentId || String(c.id),
-                title: l.title,
-                durationMinutes: Number(l.durationMinutes) || 0,
-                type: l.type,
-                videoUrl: l.videoUrl,
-                content: l.content,
-                order: Number(l.order) || 1,
-              })).sort((a: any, b: any) => a.order - b.order),
-              quiz: c.quiz ? {
-                id: c.quiz.documentId || String(c.quiz.id),
-                courseId: c.documentId || String(c.id),
-                title: c.quiz.title,
-                description: c.quiz.description,
-                passingScore: Number(c.quiz.passingScore) || 70,
-                questions: c.quiz.questions || [],
-              } : undefined,
-              createdAt: c.createdAt || new Date().toISOString(),
-            }));
-            setCourses(mapped);
-          }
+        const coursesRes = await strapiRequest('/api/courses?populate[lessons]=*&populate[quiz]=*');
+        if (coursesRes?.data) {
+          const mapped = coursesRes.data.map((c: any) => ({
+            id: c.documentId || String(c.id),
+            title: c.title || '',
+            subtitle: c.subtitle || '',
+            description: c.description || '',
+            category: c.category || 'Web Development',
+            level: c.level || 'Intermediate',
+            coverImage: c.coverImage || 'https://images.unsplash.com/photo-1516321318423-f06f85e504b3?auto=format&fit=crop&w=800&q=80',
+            instructorId: c.instructorId || '',
+            instructorName: c.instructorName || '',
+            price: Number(c.price) || 0,
+            published: c.published !== undefined ? c.published : true,
+            lessons: (c.lessons || []).map((l: any) => ({
+              id: l.documentId || String(l.id),
+              courseId: c.documentId || String(c.id),
+              title: l.title,
+              durationMinutes: Number(l.durationMinutes) || 0,
+              type: l.type,
+              videoUrl: l.videoUrl,
+              content: l.content,
+              order: Number(l.order) || 1,
+            })).sort((a: any, b: any) => a.order - b.order),
+            quiz: c.quiz ? {
+              id: c.quiz.documentId || String(c.quiz.id),
+              courseId: c.documentId || String(c.id),
+              title: c.quiz.title,
+              description: c.quiz.description,
+              passingScore: Number(c.quiz.passingScore) || 70,
+              questions: c.quiz.questions || [],
+            } : undefined,
+            createdAt: c.createdAt || new Date().toISOString(),
+          }));
+          setCourses(mapped);
         }
 
         // 3. Fetch progress
-        const progRes = await fetch(`${API_URL}/api/user-course-progresses`);
-        if (progRes.ok) {
-          const progJson = await progRes.json();
-          if (progJson?.data) {
-            setProgress(
-              progJson.data.map((p: any) => ({
-                id: p.documentId || String(p.id),
-                userId: p.userId,
-                courseId: p.courseId,
-                completedLessonIds: p.completedLessonIds || [],
-                lastAccessedLessonId: p.lastAccessedLessonId,
-                updatedAt: p.updatedAt || new Date().toISOString(),
-              }))
-            );
-          }
+        const progRes = await strapiRequest('/api/user-course-progresses');
+        if (progRes?.data) {
+          setProgress(
+            progRes.data.map((p: any) => ({
+              id: p.documentId || String(p.id),
+              userId: p.userId,
+              courseId: p.courseId,
+              completedLessonIds: p.completedLessonIds || [],
+              lastAccessedLessonId: p.lastAccessedLessonId,
+              updatedAt: p.updatedAt || new Date().toISOString(),
+            }))
+          );
         }
 
         // 4. Fetch blogs
-        const blogsRes = await fetch(`${API_URL}/api/blog-posts`);
-        if (blogsRes.ok) {
-          const blogsJson = await blogsRes.json();
-          if (blogsJson?.data) {
-            setBlogPosts(
-              blogsJson.data.map((b: any) => ({
-                id: b.documentId || String(b.id),
-                title: b.title,
-                excerpt: b.excerpt,
-                content: b.content,
-                coverImage: b.coverImage,
-                authorId: b.authorId,
-                authorName: b.authorName,
-                authorRole: b.authorRole,
-                status: b.status,
-                publishedAt: b.publishedAt,
-                createdAt: b.createdAt,
-                tags: b.tags || [],
-              }))
-            );
-          }
+        const blogsRes = await strapiRequest('/api/blog-posts');
+        if (blogsRes?.data) {
+          setBlogPosts(
+            blogsRes.data.map((b: any) => ({
+              id: b.documentId || String(b.id),
+              title: b.title,
+              excerpt: b.excerpt,
+              content: b.content,
+              coverImage: b.coverImage,
+              authorId: b.authorId,
+              authorName: b.authorName,
+              authorRole: b.authorRole,
+              status: b.status,
+              publishedAt: b.publishedAt,
+              createdAt: b.createdAt,
+              tags: b.tags || [],
+            }))
+          );
         }
 
         // 5. Fetch quiz attempts
-        const attemptsRes = await fetch(`${API_URL}/api/quiz-attempts`);
-        if (attemptsRes.ok) {
-          const attemptsJson = await attemptsRes.json();
-          if (attemptsJson?.data) {
-            setQuizAttempts(
-              attemptsJson.data.map((a: any) => ({
-                id: a.documentId || String(a.id),
-                quizId: a.quizId,
-                studentId: a.studentId,
-                scorePercentage: Number(a.scorePercentage) || 0,
-                passed: a.passed,
-                answers: a.answers || {},
-                completedAt: a.completedAt,
-              }))
-            );
-          }
+        const attemptsRes = await strapiRequest('/api/quiz-attempts');
+        if (attemptsRes?.data) {
+          setQuizAttempts(
+            attemptsRes.data.map((a: any) => ({
+              id: a.documentId || String(a.id),
+              quizId: a.quizId,
+              studentId: a.studentId,
+              scorePercentage: Number(a.scorePercentage) || 0,
+              passed: a.passed,
+              answers: a.answers || {},
+              completedAt: a.completedAt,
+            }))
+          );
         }
       } catch (err) {
         console.error('Failed to initialize LMS data from Strapi API:', err);
