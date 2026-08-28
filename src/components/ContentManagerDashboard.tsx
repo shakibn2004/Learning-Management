@@ -20,7 +20,7 @@ import {
 } from 'lucide-react';
 
 export const ContentManagerDashboard: React.FC = () => {
-  const { courses, currentUser, deleteCourse, deleteLesson, activeRole, canPerformAction } = useLMS();
+  const { courses, blogPosts, currentUser, deleteCourse, deleteLesson, activeRole, canPerformAction } = useLMS();
 
   const [showCourseModal, setShowCourseModal] = useState(false);
   const [courseToEdit, setCourseToEdit] = useState<Course | null>(null);
@@ -106,8 +106,12 @@ export const ContentManagerDashboard: React.FC = () => {
         <div className="bg-[#141d2b] p-5 rounded-2xl border border-slate-800/80 flex items-center justify-between">
           <div>
             <span className="text-xs font-medium text-slate-400">Draft Articles</span>
-            <div className="text-2xl font-extrabold text-[#fb923c] mt-1">12</div>
-            <div className="text-[11px] text-[#fb923c] font-medium mt-1">Editorial review</div>
+            <div className="text-2xl font-extrabold text-[#fb923c] mt-1">
+              {blogPosts.filter((b) => b.status === 'Draft').length}
+            </div>
+            <div className="text-[11px] text-[#fb923c] font-medium mt-1">
+              {blogPosts.filter((b) => b.status === 'Published').length} published
+            </div>
           </div>
           <div className="w-11 h-11 rounded-xl bg-[#f97316]/15 border border-[#f97316]/30 flex items-center justify-center text-[#fb923c]">
             <FileText className="w-5 h-5" />

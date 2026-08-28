@@ -23,7 +23,7 @@ interface StudentDashboardProps {
 }
 
 export const StudentDashboard: React.FC<StudentDashboardProps> = ({ activeTab, setActiveTab }) => {
-  const { courses, currentUser, enrollInCourse, getCourseProgress, activeRole } = useLMS();
+  const { courses, progress, quizAttempts, currentUser, enrollInCourse, getCourseProgress, activeRole } = useLMS();
 
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('ALL');
@@ -36,6 +36,22 @@ export const StudentDashboard: React.FC<StudentDashboardProps> = ({ activeTab, s
   const enrolledCourses = availableCourses.filter((c) =>
     currentUser.enrolledCourseIds?.includes(c.id)
   );
+
+  const studentProgress = progress.filter((p) => p.userId === currentUser.id);
+  const totalCompletedLessons = studentProgress.reduce(
+    (sum, p) => sum + (p.completedLessonIds?.length || 0),
+    0
+  );
+
+  const studentAttempts = quizAttempts.filter((qa) => qa.studentId === currentUser.id);
+  const passedQuizzesCount = studentAttempts.filter((qa) => qa.passed).length;
+  const avgQuizScore =
+    studentAttempts.length > 0
+      ? Math.round(
+          studentAttempts.reduce((sum, qa) => sum + (qa.scorePercentage || 0), 0) /
+            studentAttempts.length
+        )
+      : 0;
 
   const filteredCourses = availableCourses.filter((c) => {
     const matchesSearch =
@@ -95,8 +111,8 @@ export const StudentDashboard: React.FC<StudentDashboardProps> = ({ activeTab, s
         <div className="bg-[#141d2b] p-5 rounded-2xl border border-slate-800/80 flex items-center justify-between">
           <div>
             <span className="text-xs font-medium text-slate-400">Lessons Completed</span>
-            <div className="text-2xl font-extrabold text-[#60a5fa] mt-1">18</div>
-            <div className="text-[11px] text-[#60a5fa] font-medium mt-1">Sequential modules</div>
+            <div className="text-2xl font-extrabold text-[#60a5fa] mt-1">{totalCompletedLessons}</div>
+            <div className="text-[11px] text-[#60a5fa] font-medium mt-1">Live DB progress</div>
           </div>
           <div className="w-11 h-11 rounded-xl bg-[#3b82f6]/15 border border-[#3b82f6]/30 flex items-center justify-center text-[#60a5fa]">
             <Video className="w-5 h-5" />
@@ -106,8 +122,10 @@ export const StudentDashboard: React.FC<StudentDashboardProps> = ({ activeTab, s
         <div className="bg-[#141d2b] p-5 rounded-2xl border border-slate-800/80 flex items-center justify-between">
           <div>
             <span className="text-xs font-medium text-slate-400">Quizzes Passed</span>
-            <div className="text-2xl font-extrabold text-[#c084fc] mt-1">8</div>
-            <div className="text-[11px] text-[#c084fc] font-medium mt-1">Auto-graded assessments</div>
+            <div className="text-2xl font-extrabold text-[#c084fc] mt-1">{passedQuizzesCount}</div>
+            <div className="text-[11px] text-[#c084fc] font-medium mt-1">
+              {studentAttempts.length} total attempts
+            </div>
           </div>
           <div className="w-11 h-11 rounded-xl bg-[#a855f7]/15 border border-[#a855f7]/30 flex items-center justify-center text-[#c084fc]">
             <Award className="w-5 h-5" />
@@ -117,8 +135,10 @@ export const StudentDashboard: React.FC<StudentDashboardProps> = ({ activeTab, s
         <div className="bg-[#141d2b] p-5 rounded-2xl border border-slate-800/80 flex items-center justify-between">
           <div>
             <span className="text-xs font-medium text-slate-400">Avg Quiz Score</span>
-            <div className="text-2xl font-extrabold text-[#fb923c] mt-1">94%</div>
-            <div className="text-[11px] text-[#fb923c] font-medium mt-1">Top performance tier</div>
+            <div className="text-2xl font-extrabold text-[#fb923c] mt-1">
+              {avgQuizScore > 0 ? `${avgQuizScore}%` : 'N/A'}
+            </div>
+            <div className="text-[11px] text-[#fb923c] font-medium mt-1">Calculated from assessments</div>
           </div>
           <div className="w-11 h-11 rounded-xl bg-[#f97316]/15 border border-[#f97316]/30 flex items-center justify-center text-[#fb923c]">
             <Star className="w-5 h-5" />

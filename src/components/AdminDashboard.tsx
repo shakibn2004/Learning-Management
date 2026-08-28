@@ -16,7 +16,7 @@ import {
 } from 'lucide-react';
 
 export const AdminDashboard: React.FC = () => {
-  const { users, updateUserRole, activeRole } = useLMS();
+  const { users, courses, currentUser, updateUserRole, activeRole } = useLMS();
   const [searchTerm, setSearchTerm] = useState('');
   const [roleFilter, setRoleFilter] = useState<string>('ALL');
 
@@ -41,25 +41,43 @@ export const AdminDashboard: React.FC = () => {
     return matchesSearch && matchesRole;
   });
 
+  // Calculate live database metrics
+  const totalRevenue = users
+    .filter((u) => u.role === 'Student')
+    .reduce((acc, student) => {
+      const studentCourses = courses.filter((c) => student.enrolledCourseIds?.includes(c.id));
+      const studentTotal = studentCourses.reduce((sum, c) => sum + (c.price || 0), 0);
+      return acc + studentTotal;
+    }, 0);
+
+  const totalEnrollments = users
+    .filter((u) => u.role === 'Student')
+    .reduce((acc, u) => acc + (u.enrolledCourseIds?.length || 0), 0);
+
+  const studentCount = users.filter((u) => u.role === 'Student').length;
+  const conversionRate = users.length > 0 ? ((studentCount / users.length) * 100).toFixed(1) : '0.0';
+
   return (
     <div className="space-y-6 animate-fadeIn">
-      {/* Header Title Bar matching 1st reference image */}
+      {/* Header Title Bar */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-2">
         <div>
           <h2 className="text-2xl font-extrabold text-white tracking-tight">Dashboard Overview</h2>
-          <p className="text-xs text-slate-400 mt-0.5">Welcome back, Sarah Johnson</p>
+          <p className="text-xs text-slate-400 mt-0.5">Welcome back, {currentUser.name}</p>
         </div>
       </div>
 
-      {/* 1. TOP 4 STAT CARDS GRID (matching 1st reference image) */}
+      {/* 1. TOP 4 STAT CARDS GRID */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
         {/* Card 1: Total Revenue */}
         <div className="bg-[#141d2b] p-5 rounded-2xl border border-slate-800/80 flex items-center justify-between">
           <div>
-            <span className="text-xs font-medium text-slate-400">Total Revenue</span>
-            <div className="text-2xl font-extrabold text-[#34d399] mt-1">$124,592</div>
+            <span className="text-xs font-medium text-slate-400">Total Platform Value</span>
+            <div className="text-2xl font-extrabold text-[#34d399] mt-1">
+              ${totalRevenue.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+            </div>
             <div className="text-[11px] text-[#34d399] font-medium mt-1">
-              +12.5% from last month
+              {totalEnrollments} active enrollments
             </div>
           </div>
           <div className="w-11 h-11 rounded-xl bg-[#10b981]/15 border border-[#10b981]/30 flex items-center justify-center text-[#34d399]">
@@ -71,9 +89,9 @@ export const AdminDashboard: React.FC = () => {
         <div className="bg-[#141d2b] p-5 rounded-2xl border border-slate-800/80 flex items-center justify-between">
           <div>
             <span className="text-xs font-medium text-slate-400">Active Users</span>
-            <div className="text-2xl font-extrabold text-[#60a5fa] mt-1">8,429</div>
+            <div className="text-2xl font-extrabold text-[#60a5fa] mt-1">{users.length}</div>
             <div className="text-[11px] text-[#60a5fa] font-medium mt-1">
-              +5.2% from last week
+              Across 4 system roles
             </div>
           </div>
           <div className="w-11 h-11 rounded-xl bg-[#3b82f6]/15 border border-[#3b82f6]/30 flex items-center justify-center text-[#60a5fa]">
@@ -84,10 +102,10 @@ export const AdminDashboard: React.FC = () => {
         {/* Card 3: Projects / Courses */}
         <div className="bg-[#141d2b] p-5 rounded-2xl border border-slate-800/80 flex items-center justify-between">
           <div>
-            <span className="text-xs font-medium text-slate-400">Projects</span>
-            <div className="text-2xl font-extrabold text-[#c084fc] mt-1">156</div>
+            <span className="text-xs font-medium text-slate-400">Published Courses</span>
+            <div className="text-2xl font-extrabold text-[#c084fc] mt-1">{courses.length}</div>
             <div className="text-[11px] text-[#c084fc] font-medium mt-1">
-              23 completed this week
+              {courses.reduce((acc, c) => acc + (c.lessons?.length || 0), 0)} video & text lessons
             </div>
           </div>
           <div className="w-11 h-11 rounded-xl bg-[#a855f7]/15 border border-[#a855f7]/30 flex items-center justify-center text-[#c084fc]">
@@ -98,10 +116,10 @@ export const AdminDashboard: React.FC = () => {
         {/* Card 4: Conversion Rate */}
         <div className="bg-[#141d2b] p-5 rounded-2xl border border-slate-800/80 flex items-center justify-between">
           <div>
-            <span className="text-xs font-medium text-slate-400">Conversion Rate</span>
-            <div className="text-2xl font-extrabold text-[#fb923c] mt-1">3.24%</div>
+            <span className="text-xs font-medium text-slate-400">Student Learner Ratio</span>
+            <div className="text-2xl font-extrabold text-[#fb923c] mt-1">{conversionRate}%</div>
             <div className="text-[11px] text-[#fb923c] font-medium mt-1">
-              +0.8% from last month
+              {studentCount} student accounts
             </div>
           </div>
           <div className="w-11 h-11 rounded-xl bg-[#f97316]/15 border border-[#f97316]/30 flex items-center justify-center text-[#fb923c]">
@@ -110,7 +128,7 @@ export const AdminDashboard: React.FC = () => {
         </div>
       </div>
 
-      {/* 2. PLATFORM ANALYTICS CHARTS (Revenue Analytics + User Growth) */}
+      {/* 2. PLATFORM ANALYTICS CHARTS */}
       <PlatformAnalyticsCharts />
 
       {/* 3. RECENT TEAM ACTIVITY & TEAM MEMBERS WITH QUICK ACTIONS */}
@@ -124,7 +142,7 @@ export const AdminDashboard: React.FC = () => {
               <ShieldCheck className="w-5 h-5 text-[#3b82f6]" />
               <span>User Role Management & Permissions</span>
             </h3>
-            <p className="text-xs text-slate-400 mt-0.5">Manage platform accounts, security clearance, and role assignments.</p>
+            <p className="text-xs text-slate-400 mt-0.5">Manage platform accounts, security clearance, and role assignments directly in Strapi.</p>
           </div>
 
           <div className="flex flex-wrap items-center gap-3">
@@ -162,7 +180,7 @@ export const AdminDashboard: React.FC = () => {
                 <th className="px-6 py-3.5">User</th>
                 <th className="px-6 py-3.5">Current Role</th>
                 <th className="px-6 py-3.5">Status</th>
-                <th className="px-6 py-3.5">Reassign Role</th>
+                <th className="px-6 py-3.5">Reassign Role (Backend Sync)</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-800/60">
@@ -205,7 +223,7 @@ export const AdminDashboard: React.FC = () => {
                       <select
                         value={user.role}
                         onChange={(e) => updateUserRole(user.id, e.target.value as UserRole)}
-                        className="bg-[#0f172a] text-xs px-3 py-1.5 rounded-lg text-slate-200 border border-slate-700 cursor-pointer font-medium"
+                        className="bg-[#1a2436] text-xs px-3 py-1.5 rounded-lg border border-slate-700 text-slate-200 focus:outline-none focus:border-[#3b82f6] cursor-pointer"
                       >
                         <option value="Admin">Admin</option>
                         <option value="Content Manager">Content Manager</option>

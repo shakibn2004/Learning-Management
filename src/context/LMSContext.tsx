@@ -2,7 +2,6 @@
 
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { User, UserRole, Course, Lesson, Quiz, QuizAttempt, UserCourseProgress, BlogPost } from '../types';
-import { INITIAL_USERS, INITIAL_COURSES, INITIAL_PROGRESS, INITIAL_BLOG_POSTS, INITIAL_QUIZ_ATTEMPTS } from '../data/mockData';
 
 interface LMSContextType {
   currentUser: User;
@@ -12,6 +11,7 @@ interface LMSContextType {
   blogPosts: BlogPost[];
   quizAttempts: QuizAttempt[];
   activeRole: UserRole;
+  isLoading: boolean;
   switchRole: (role: UserRole) => void;
   updateUserRole: (userId: string, newRole: UserRole) => void;
   enrollInCourse: (courseId: string) => void;
@@ -49,17 +49,26 @@ const LMSContext = createContext<LMSContextType | undefined>(undefined);
 const LOCAL_STORAGE_KEY = 'lms_master_state_v1';
 
 export const LMSProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [users, setUsers] = useState<User[]>(INITIAL_USERS);
-  const [courses, setCourses] = useState<Course[]>(INITIAL_COURSES);
-  const [progress, setProgress] = useState<UserCourseProgress[]>(INITIAL_PROGRESS);
-  const [blogPosts, setBlogPosts] = useState<BlogPost[]>(INITIAL_BLOG_POSTS);
-  const [quizAttempts, setQuizAttempts] = useState<QuizAttempt[]>(INITIAL_QUIZ_ATTEMPTS);
+  const [users, setUsers] = useState<User[]>([]);
+  const [courses, setCourses] = useState<Course[]>([]);
+  const [progress, setProgress] = useState<UserCourseProgress[]>([]);
+  const [blogPosts, setBlogPosts] = useState<BlogPost[]>([]);
+  const [quizAttempts, setQuizAttempts] = useState<QuizAttempt[]>([]);
   const [activeRole, setActiveRole] = useState<UserRole>('Admin');
+  const [isLoading, setIsLoading] = useState<boolean>(true);
 
   const API_URL = process.env.NEXT_PUBLIC_STRAPI_URL || 'http://localhost:1337';
 
-  // Current active user matching current selected role
-  const currentUser = users.find((u) => u.role === activeRole) || users[0];
+  // Current active user matching current selected role or fallback user
+  const currentUser: User = users.find((u) => u.role === activeRole) || users[0] || {
+    id: `user-${activeRole.toLowerCase().replace(/\s+/g, '-')}`,
+    name: `${activeRole} User`,
+    email: `${activeRole.toLowerCase().replace(/\s+/g, '.')}@learnhub.com`,
+    role: activeRole,
+    avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=200&q=80',
+    enrolledCourseIds: [],
+    createdAt: new Date().toISOString(),
+  };
 
   const strapiRequest = async (path: string, method = 'GET', body?: any) => {
     try {
@@ -91,9 +100,10 @@ export const LMSProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     }
   };
 
-  // Load state & fetch courses from Strapi API
+  // Load state & fetch data from Strapi API on mount
   useEffect(() => {
     const initData = async () => {
+      setIsLoading(true);
       try {
         // 1. Fetch Users
         const usersRes = await fetch(`${API_URL}/api/lms-users`);
@@ -217,6 +227,8 @@ export const LMSProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         }
       } catch (err) {
         console.error('Failed to initialize LMS data from Strapi API:', err);
+      } finally {
+        setIsLoading(false);
       }
     };
 
@@ -273,7 +285,7 @@ export const LMSProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       const already = currentUser.enrolledCourseIds.includes(courseId);
       const updatedCourseIds = already ? currentUser.enrolledCourseIds : [...currentUser.enrolledCourseIds, courseId];
 
-      // Update user enrolled courses
+      // Update user enrolled courses in Strapi
       const userRes = await strapiRequest(`/api/lms-users/${currentUser.id}`, 'PUT', {
         data: { enrolledCourseIds: updatedCourseIds }
       });
@@ -292,7 +304,7 @@ export const LMSProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         );
       }
 
-      // Initialize progress entry if not exists
+      // Initialize progress entry in Strapi if not exists
       const existingProg = progress.find((p) => p.userId === currentUser.id && p.courseId === courseId);
       if (!existingProg) {
         const progRes = await strapiRequest('/api/user-course-progresses', 'POST', {
@@ -819,6 +831,7 @@ export const LMSProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         blogPosts,
         quizAttempts,
         activeRole,
+        isLoading,
         switchRole,
         updateUserRole,
         enrollInCourse,
