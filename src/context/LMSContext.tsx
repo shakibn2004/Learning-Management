@@ -288,17 +288,12 @@ export const LMSProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   // Authentication Methods
   const login = async (email: string, password: string): Promise<{ success: boolean; error?: string; user?: User }> => {
     try {
-      const res = await fetch(`${API_URL}/api/lms-users/login`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, password }),
-      });
+      const data = await strapiRequest('/api/lms-users/login', 'POST', { email, password });
 
-      const data = await res.json();
-      if (!res.ok || !data.jwt) {
+      if (!data || !data.jwt) {
         return {
           success: false,
-          error: data.error || 'Login failed. Please check your credentials.',
+          error: data?.error || 'Login failed. Please check your credentials.',
         };
       }
 
@@ -323,17 +318,12 @@ export const LMSProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     avatar?: string;
   }): Promise<{ success: boolean; error?: string; user?: User }> => {
     try {
-      const res = await fetch(`${API_URL}/api/lms-users/register`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(userData),
-      });
+      const data = await strapiRequest('/api/lms-users/register', 'POST', userData);
 
-      const data = await res.json();
-      if (!res.ok || !data.jwt) {
+      if (!data || !data.jwt) {
         return {
           success: false,
-          error: data.error || 'Registration failed. Email may already be registered.',
+          error: data?.error || 'Registration failed. Email may already be registered.',
         };
       }
 
