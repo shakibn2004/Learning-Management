@@ -23,8 +23,8 @@ import {
 const DEMO_PERSONAS = [
   {
     role: 'Admin',
-    name: 'Alex Rivera',
-    email: 'alex.admin@learnhub.com',
+    name: 'Md Nazmus Shakib',
+    email: 'admin@gmail.com',
     desc: 'Full system control, user RBAC & financial audit logs',
     color: 'from-emerald-500/20 to-teal-500/20 border-emerald-500/30 text-emerald-400',
     btnColor: 'bg-emerald-600 hover:bg-emerald-500 text-white',
@@ -32,8 +32,8 @@ const DEMO_PERSONAS = [
   },
   {
     role: 'Content Manager',
-    name: 'Sophia Chen',
-    email: 'sophia.chen@learnhub.com',
+    name: 'Manager',
+    email: 'manager@gmail.com',
     desc: 'Editorial articles, publications & curriculum design',
     color: 'from-blue-500/20 to-cyan-500/20 border-blue-500/30 text-blue-400',
     btnColor: 'bg-blue-600 hover:bg-blue-500 text-white',
@@ -41,8 +41,8 @@ const DEMO_PERSONAS = [
   },
   {
     role: 'Instructor',
-    name: 'Dr. Marcus Vance',
-    email: 'marcus.vance@learnhub.com',
+    name: 'Instructor',
+    email: 'instructor@gmail.com',
     desc: 'Manage enrolled students, lessons, and interactive quizzes',
     color: 'from-purple-500/20 to-indigo-500/20 border-purple-500/30 text-purple-400',
     btnColor: 'bg-purple-600 hover:bg-purple-500 text-white',
@@ -50,8 +50,8 @@ const DEMO_PERSONAS = [
   },
   {
     role: 'Student',
-    name: 'David Kim',
-    email: 'david.kim@learnhub.com',
+    name: 'Student Saif',
+    email: 'student@gmail.com',
     desc: 'Interactive video lessons, code labs, quizzes & gradebook',
     color: 'from-amber-500/20 to-orange-500/20 border-amber-500/30 text-amber-400',
     btnColor: 'bg-amber-600 hover:bg-amber-500 text-white',

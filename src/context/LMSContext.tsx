@@ -79,14 +79,14 @@ export const LMSProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
   const API_URL = process.env.NEXT_PUBLIC_STRAPI_URL || 'http://localhost:1337';
 
-  // Current active user: preference given to authenticated user, else role persona
+  // Current active user: preference given to authenticated user, else user from fetched database
   const currentUser: User =
     authUser ||
     users.find((u) => u.role === activeRole) ||
     users[0] || {
-      id: `user-${activeRole.toLowerCase().replace(/\s+/g, '-')}`,
-      name: `${activeRole} User`,
-      email: `${activeRole.toLowerCase().replace(/\s+/g, '.')}@learnhub.com`,
+      id: '',
+      name: 'Guest User',
+      email: '',
       role: activeRole,
       avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=200&q=80',
       enrolledCourseIds: [],
@@ -142,22 +142,6 @@ export const LMSProvider: React.FC<{ children: React.ReactNode }> = ({ children 
           } catch (e) {
             console.warn('Failed to parse saved user', e);
           }
-        } else {
-          // Default fallback demo session for seamless developer experience
-          const defaultAdmin: User = {
-            id: 'user-admin-demo',
-            name: 'Alex Rivera',
-            email: 'alex.admin@learnhub.com',
-            role: 'Admin',
-            avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=200&q=80',
-            enrolledCourseIds: [],
-            createdAt: new Date().toISOString(),
-          };
-          setAuthToken('demo-jwt-token-admin');
-          setAuthUser(defaultAdmin);
-          setActiveRole('Admin');
-          localStorage.setItem(AUTH_TOKEN_KEY, 'demo-jwt-token-admin');
-          localStorage.setItem(AUTH_USER_KEY, JSON.stringify(defaultAdmin));
         }
 
         // 1. Fetch Users
@@ -397,25 +381,26 @@ export const LMSProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   };
 
   const updateUserRole = async (userId: string, newRole: UserRole) => {
-    // Update local state immediately for instant responsive UI
-    setUsers((prev) =>
-      prev.map((u) => (u.id === userId ? { ...u, role: newRole } : u))
-    );
-    if (authUser?.id === userId) {
-      const updatedUser = { ...authUser, role: newRole };
-      setAuthUser(updatedUser);
-      setActiveRole(newRole);
-      localStorage.setItem(AUTH_USER_KEY, JSON.stringify(updatedUser));
-    }
-
     try {
-      await strapiRequest(`/api/lms-users/${userId}`, 'PUT', {
+      const res = await strapiRequest(`/api/lms-users/${userId}`, 'PUT', {
         data: { role: newRole },
       });
-      toast.success('Role Updated', `User permissions successfully updated to ${newRole}.`);
-    } catch (err) {
-      console.warn('Backend sync failed, state kept locally:', err);
-      toast.success('Role Updated Locally', `User role changed to ${newRole} (Active Session).`);
+
+      setUsers((prev) =>
+        prev.map((u) => (u.id === userId ? { ...u, role: newRole } : u))
+      );
+
+      if (authUser?.id === userId) {
+        const updatedUser = { ...authUser, role: newRole };
+        setAuthUser(updatedUser);
+        setActiveRole(newRole);
+        localStorage.setItem(AUTH_USER_KEY, JSON.stringify(updatedUser));
+      }
+
+      toast.success('Role Updated in Database', `User role successfully changed to ${newRole}.`);
+    } catch (err: any) {
+      console.error('Role update error:', err);
+      toast.error('Database Sync Failed', err.message || 'Could not update user role in database.');
     }
   };
 
