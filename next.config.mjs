@@ -13,7 +13,9 @@ const nextConfig = {
     return [
       {
         source: '/strapi-api/:path*',
-        destination: 'http://localhost:1337/api/:path*',
+        destination: process.env.NEXT_PUBLIC_STRAPI_URL 
+          ? `${process.env.NEXT_PUBLIC_STRAPI_URL}/:path*`
+          : 'http://localhost:1337/api/:path*',
       },
     ];
   },
