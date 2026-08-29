@@ -15,38 +15,49 @@ export const AppShell: React.FC<{ children: React.ReactNode }> = ({ children }) 
 
   const isLandingPage = pathname === '/';
   const isAuthPage = pathname === '/login' || pathname === '/register';
+  const isPublicRoute = isLandingPage || isAuthPage;
 
-  // Route Protection: send unauthenticated users to login if session & demo persona are absent
+  // Strict Route Protection: If user is not authenticated, send them directly to /login
   React.useEffect(() => {
     if (isLoading) return;
 
-    if (!isAuthenticated && !currentUser?.id && !isLandingPage && !isAuthPage) {
-      router.push('/login');
+    if (!isAuthenticated && !isPublicRoute) {
+      router.replace('/login');
     }
-  }, [isAuthenticated, currentUser, isLoading, isLandingPage, isAuthPage, router]);
+  }, [isAuthenticated, isLoading, isPublicRoute, router]);
 
-  // Standalone Auth Pages
+  // Standalone Auth Pages (Login / Register)
   if (isAuthPage) {
     return <>{children}</>;
   }
 
-  // Show dark loader only during initial loading
-  if (!isLandingPage && !isAuthPage && isLoading) {
+  // Show dark loader while verifying initial session
+  if (isLoading) {
     return (
       <div className="min-h-screen bg-[#080c14] flex flex-col items-center justify-center space-y-4">
         <div className="w-10 h-10 border-3 border-cyan-400 border-t-transparent rounded-full animate-spin" />
-        <span className="text-xs font-mono text-slate-400">Loading portal...</span>
+        <span className="text-xs font-mono text-slate-400">Verifying session...</span>
       </div>
     );
   }
 
+  // Public Landing Page
   if (isLandingPage) {
     return (
       <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col font-sans antialiased selection:bg-cyan-500 selection:text-slate-950">
-        {/* Full-width Landing Page Content. Header and Footer are handled inside page.tsx */}
         <main className="flex-1 w-full bg-slate-950">
           {children}
         </main>
+      </div>
+    );
+  }
+
+  // If unauthenticated and trying to access protected dashboard routes, hold with spinner until redirected to /login
+  if (!isAuthenticated) {
+    return (
+      <div className="min-h-screen bg-[#080c14] flex flex-col items-center justify-center space-y-4">
+        <div className="w-10 h-10 border-3 border-cyan-400 border-t-transparent rounded-full animate-spin" />
+        <span className="text-xs font-mono text-slate-400">Redirecting to login...</span>
       </div>
     );
   }
