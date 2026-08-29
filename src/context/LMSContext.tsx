@@ -59,134 +59,12 @@ export type PermissionAction =
 
 const LMSContext = createContext<LMSContextType | undefined>(undefined);
 
-const LOCAL_STORAGE_KEY = 'lms_master_state_v1';
 const AUTH_TOKEN_KEY = 'lms_auth_token';
-const AUTH_USER_KEY = 'lms_auth_user';
-const COURSES_CACHE_KEY = 'lms_cached_courses_v2';
-
-const DEFAULT_USERS: User[] = [
-  {
-    id: 'user-admin-1',
-    name: 'Admin User',
-    email: 'admin@lms.com',
-    role: 'Admin',
-    avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=200&q=80',
-    enrolledCourseIds: ['course-1', 'course-2'],
-    createdAt: new Date().toISOString(),
-  },
-  {
-    id: 'user-cm-1',
-    name: 'Content Manager',
-    email: 'manager@lms.com',
-    role: 'Content Manager',
-    avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=200&q=80',
-    enrolledCourseIds: ['course-1'],
-    createdAt: new Date().toISOString(),
-  },
-  {
-    id: 'user-inst-1',
-    name: 'Dr. Marcus Vance',
-    email: 'marcus@lms.com',
-    role: 'Instructor',
-    avatar: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&w=200&q=80',
-    enrolledCourseIds: [],
-    createdAt: new Date().toISOString(),
-  },
-  {
-    id: 'user-student-1',
-    name: 'Elena Rostova',
-    email: 'elena@lms.com',
-    role: 'Student',
-    avatar: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&w=200&q=80',
-    enrolledCourseIds: ['course-1', 'course-2'],
-    createdAt: new Date().toISOString(),
-  },
-];
-
-const DEFAULT_COURSES: Course[] = [
-  {
-    id: 'course-1',
-    title: 'Full-Stack Next.js 14 & Strapi Masterclass',
-    subtitle: 'Master modern serverless web development with Next.js App Router and Headless Strapi CMS.',
-    description: 'A comprehensive step-by-step masterclass covering Next.js Server Components, Strapi REST & GraphQL APIs, Role-Based Access Control, JWT authentication, and Vercel & Railway cloud deployments.',
-    category: 'Web Development',
-    level: 'Intermediate',
-    price: 89.99,
-    published: true,
-    coverImage: 'https://images.unsplash.com/photo-1618401471353-b98afee0b2eb?auto=format&fit=crop&w=800&q=80',
-    instructorId: 'user-inst-1',
-    instructorName: 'Dr. Marcus Vance',
-    createdAt: new Date().toISOString(),
-    lessons: [
-      {
-        id: 'lesson-1-1',
-        courseId: 'course-1',
-        title: 'Introduction to Next.js App Router & Server Components',
-        durationMinutes: 18,
-        type: 'video',
-        videoUrl: 'https://www.youtube.com/embed/dQw4w9WgXcQ',
-        content: 'Overview of Next.js 14 architecture, server components vs client components, and directory layout.',
-        order: 1,
-      },
-      {
-        id: 'lesson-1-2',
-        courseId: 'course-1',
-        title: 'Strapi 5 Headless CMS Setup & PostgreSQL Schema Design',
-        durationMinutes: 25,
-        type: 'video',
-        videoUrl: 'https://www.youtube.com/embed/dQw4w9WgXcQ',
-        content: 'Setting up Strapi 5, defining content types, relations, and Neon PostgreSQL connection.',
-        order: 2,
-      },
-    ],
-  },
-  {
-    id: 'course-2',
-    title: 'Advanced UI/UX & Motion Design for Web Systems',
-    subtitle: 'Craft breathtaking digital experiences using CSS Glassmorphism, Tailwind, and Micro-interactions.',
-    description: 'Learn modern design system fundamentals, color harmony, typography hierarchy, micro-animations, accessible contrast ratios, and responsive dashboard layouts.',
-    category: 'Design & UI/UX',
-    level: 'Beginner',
-    price: 69.99,
-    published: true,
-    coverImage: 'https://images.unsplash.com/photo-1507238691740-187a5b1d37b8?auto=format&fit=crop&w=800&q=80',
-    instructorId: 'user-inst-2',
-    instructorName: 'Sarah Jenkins',
-    createdAt: new Date().toISOString(),
-    lessons: [
-      {
-        id: 'lesson-2-1',
-        courseId: 'course-2',
-        title: 'Design Tokens & Color Palette Construction',
-        durationMinutes: 15,
-        type: 'video',
-        videoUrl: 'https://www.youtube.com/embed/dQw4w9WgXcQ',
-        content: 'Creating a high-contrast dark theme color palette and design token hierarchy.',
-        order: 1,
-      },
-    ],
-  },
-  {
-    id: 'course-3',
-    title: 'Cloud Architecture & Microservices with Railway & Docker',
-    subtitle: 'Deploy scalable backend services, databases, and microservices with high reliability.',
-    description: 'Learn continuous deployment pipelines, environment configuration, database management, microservice communication, and monitoring.',
-    category: 'DevOps & Cloud',
-    level: 'Advanced',
-    price: 99.99,
-    published: true,
-    coverImage: 'https://images.unsplash.com/photo-1451187580459-43490279c0fa?auto=format&fit=crop&w=800&q=80',
-    instructorId: 'user-inst-1',
-    instructorName: 'Dr. Marcus Vance',
-    createdAt: new Date().toISOString(),
-    lessons: [],
-  },
-];
 
 export const LMSProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const toast = useToast();
-  const [users, setUsers] = useState<User[]>(DEFAULT_USERS);
-  const [courses, setCourses] = useState<Course[]>(DEFAULT_COURSES);
+  const [users, setUsers] = useState<User[]>([]);
+  const [courses, setCourses] = useState<Course[]>([]);
   const [progress, setProgress] = useState<UserCourseProgress[]>([]);
   const [blogPosts, setBlogPosts] = useState<BlogPost[]>([]);
   const [quizAttempts, setQuizAttempts] = useState<QuizAttempt[]>([]);
@@ -207,13 +85,19 @@ export const LMSProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         : '/strapi-api')
     : (rawStrapiUrl ? rawStrapiUrl.replace(/\/+$/, '') + (rawStrapiUrl.endsWith('/api') ? '' : '/api') : 'http://localhost:1337/api');
 
-  // Current active user: preference given to authenticated user, else user from fetched database
+  // Current active user: preference given to authenticated user, else matching role from database users
   const currentUser: User =
     authUser ||
     users.find((u) => u.role === activeRole) ||
-    users[0] ||
-    DEFAULT_USERS.find((u) => u.role === activeRole) ||
-    DEFAULT_USERS[0];
+    users[0] || {
+      id: '',
+      name: '',
+      email: '',
+      role: activeRole,
+      avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=200&q=80',
+      enrolledCourseIds: [],
+      createdAt: new Date().toISOString(),
+    };
 
   const strapiRequest = async (path: string, method = 'GET', body?: any) => {
     try {
@@ -266,74 +150,43 @@ export const LMSProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     }
   };
 
-  // Load state & fetch data from Strapi API on mount
+  // Pure Database Integration: Load state directly from Strapi API on mount with NO local caching
   useEffect(() => {
     const initData = async () => {
       setIsLoading(true);
 
-      // 0. Pre-load cached courses, progress & attempts from localStorage if available
-      try {
-        const cached = localStorage.getItem(COURSES_CACHE_KEY);
-        if (cached) {
-          const parsed = JSON.parse(cached);
-          if (Array.isArray(parsed) && parsed.length > 0) {
-            setCourses(parsed);
-          }
-        }
-        const cachedProg = localStorage.getItem('lms_cached_progress_v2');
-        if (cachedProg) {
-          const parsedProg = JSON.parse(cachedProg);
-          if (Array.isArray(parsedProg) && parsedProg.length > 0) {
-            setProgress(parsedProg);
-          }
-        }
-        const cachedAttempts = localStorage.getItem('lms_cached_attempts_v2');
-        if (cachedAttempts) {
-          const parsedAttempts = JSON.parse(cachedAttempts);
-          if (Array.isArray(parsedAttempts) && parsedAttempts.length > 0) {
-            setQuizAttempts(parsedAttempts);
-          }
-        }
-      } catch (e) {
-        console.warn('Failed to parse cached data', e);
+      // Clean up any stale legacy cache from previous versions
+      if (typeof window !== 'undefined') {
+        try {
+          localStorage.removeItem('lms_cached_courses_v2');
+          localStorage.removeItem('lms_cached_progress_v2');
+          localStorage.removeItem('lms_cached_attempts_v2');
+          localStorage.removeItem('lms_master_state_v1');
+          localStorage.removeItem('lms_auth_user');
+        } catch (e) {}
       }
 
-      // Restore session from localStorage & verify with backend /api/lms-users/me
-      try {
-        const savedToken = localStorage.getItem(AUTH_TOKEN_KEY);
-        const savedUser = localStorage.getItem(AUTH_USER_KEY);
-        if (savedToken) {
-          setAuthToken(savedToken);
-          if (savedUser) {
-            try {
-              const parsedUser: User = JSON.parse(savedUser);
-              setAuthUser(parsedUser);
-              setActiveRole(parsedUser.role);
-            } catch (e) {}
+      // 1. Restore & verify authenticated user directly with backend database
+      const savedToken = typeof window !== 'undefined' ? localStorage.getItem(AUTH_TOKEN_KEY) : null;
+      if (savedToken) {
+        setAuthToken(savedToken);
+        try {
+          const meRes = await strapiRequest('/api/lms-users/me');
+          if (meRes?.user) {
+            setAuthUser(meRes.user);
+            setActiveRole(meRes.user.role);
+          } else {
+            logout();
           }
-
-          // Verify token against backend /api/lms-users/me
-          try {
-            const meRes = await strapiRequest('/api/lms-users/me');
-            if (meRes?.user) {
-              setAuthUser(meRes.user);
-              setActiveRole(meRes.user.role);
-              localStorage.setItem(AUTH_USER_KEY, JSON.stringify(meRes.user));
-            }
-          } catch (verifyErr) {
-            console.warn('Token verification failed on backend:', verifyErr);
-          }
+        } catch (verifyErr) {
+          console.warn('Backend user verification failed:', verifyErr);
+          logout();
         }
-      } catch (e) {
-        console.warn('Failed session restore:', e);
-      } finally {
-        // Immediately unblock UI loading spinner
-        setIsLoading(false);
       }
 
-      // 1. Fetch Users (isolated try)
+      // 2. Fetch Users directly from Strapi Database
       try {
-        const usersRes = await strapiRequest('/api/lms-users');
+        const usersRes = await strapiRequest('/api/lms-users?pagination[pageSize]=100');
         if (usersRes?.data) {
           setUsers(
             usersRes.data.map((u: any) => ({
@@ -351,7 +204,7 @@ export const LMSProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         console.warn('Users fetch failed:', err);
       }
 
-      // 2. Fetch Courses with populated lessons and quiz (isolated try)
+      // 3. Fetch Courses with lessons & quiz directly from Strapi Database
       try {
         const coursesRes = await strapiRequest('/api/courses?populate[lessons]=*&populate[quiz]=*&pagination[pageSize]=100');
         if (coursesRes?.data) {
@@ -388,15 +241,12 @@ export const LMSProvider: React.FC<{ children: React.ReactNode }> = ({ children 
             createdAt: c.createdAt || new Date().toISOString(),
           }));
           setCourses(mapped);
-          try {
-            localStorage.setItem(COURSES_CACHE_KEY, JSON.stringify(mapped));
-          } catch (e) {}
         }
       } catch (err) {
         console.warn('Courses fetch failed:', err);
       }
 
-      // 3. Fetch progress (isolated try)
+      // 4. Fetch User Course Progress directly from Strapi Database
       try {
         const progRes = await strapiRequest('/api/user-course-progresses?pagination[pageSize]=100');
         if (progRes?.data) {
@@ -409,15 +259,12 @@ export const LMSProvider: React.FC<{ children: React.ReactNode }> = ({ children 
             updatedAt: p.updatedAt || new Date().toISOString(),
           }));
           setProgress(mappedProg);
-          try {
-            localStorage.setItem('lms_cached_progress_v2', JSON.stringify(mappedProg));
-          } catch (e) {}
         }
       } catch (err) {
         console.warn('Progress fetch failed:', err);
       }
 
-      // 4. Fetch blogs (isolated try)
+      // 5. Fetch Blog Posts directly from Strapi Database
       try {
         const blogsRes = await strapiRequest('/api/blog-posts?pagination[pageSize]=100');
         if (blogsRes?.data) {
@@ -442,7 +289,7 @@ export const LMSProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         console.warn('Blogs fetch failed:', err);
       }
 
-      // 5. Fetch quiz attempts (isolated try)
+      // 6. Fetch Quiz Attempts directly from Strapi Database
       try {
         const attemptsRes = await strapiRequest('/api/quiz-attempts?pagination[pageSize]=100');
         if (attemptsRes?.data) {
@@ -456,39 +303,16 @@ export const LMSProvider: React.FC<{ children: React.ReactNode }> = ({ children 
             completedAt: a.completedAt,
           }));
           setQuizAttempts(mappedAttempts);
-          try {
-            localStorage.setItem('lms_cached_attempts_v2', JSON.stringify(mappedAttempts));
-          } catch (e) {}
         }
       } catch (err) {
         console.warn('Quiz attempts fetch failed:', err);
+      } finally {
+        setIsLoading(false);
       }
     };
 
     initData();
-
-    // Load active role from localStorage if no logged-in user
-    try {
-      const saved = localStorage.getItem(LOCAL_STORAGE_KEY);
-      if (saved && !localStorage.getItem(AUTH_USER_KEY)) {
-        const parsed = JSON.parse(saved);
-        if (parsed.activeRole) {
-          setActiveRole(parsed.activeRole);
-        }
-      }
-    } catch (e) {
-      console.warn('Failed to load active role from local storage', e);
-    }
   }, []);
-
-  // Save activeRole to localStorage on changes
-  useEffect(() => {
-    try {
-      localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify({ activeRole }));
-    } catch (e) {
-      console.warn('Failed to persist activeRole', e);
-    }
-  }, [activeRole]);
 
   // Authentication Methods
   const login = async (email: string, password: string): Promise<{ success: boolean; error?: string; user?: User }> => {
@@ -507,7 +331,6 @@ export const LMSProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       setActiveRole(data.user.role);
 
       localStorage.setItem(AUTH_TOKEN_KEY, data.jwt);
-      localStorage.setItem(AUTH_USER_KEY, JSON.stringify(data.user));
 
       setUsers((prev) => {
         const exists = prev.some((u) => u.id === data.user.id || u.email === data.user.email);
@@ -545,7 +368,6 @@ export const LMSProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       setActiveRole(data.user.role);
 
       localStorage.setItem(AUTH_TOKEN_KEY, data.jwt);
-      localStorage.setItem(AUTH_USER_KEY, JSON.stringify(data.user));
 
       setUsers((prev) => [data.user, ...prev.filter((u) => u.id !== data.user.id && u.email !== data.user.email)]);
 
@@ -559,7 +381,6 @@ export const LMSProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     setAuthToken(null);
     setAuthUser(null);
     localStorage.removeItem(AUTH_TOKEN_KEY);
-    localStorage.removeItem(AUTH_USER_KEY);
   };
 
   const switchRole = (role: UserRole) => {
@@ -585,7 +406,6 @@ export const LMSProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         const updatedUser = { ...authUser, role: newRole };
         setAuthUser(updatedUser);
         setActiveRole(newRole);
-        localStorage.setItem(AUTH_USER_KEY, JSON.stringify(updatedUser));
       }
 
       toast.success('Role Updated in Database', `User role successfully changed to ${newRole}.`);
@@ -636,7 +456,6 @@ export const LMSProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         if (authUser?.id === currentUser.id) {
           const updated = { ...authUser, enrolledCourseIds: updatedCourseIds };
           setAuthUser(updated);
-          localStorage.setItem(AUTH_USER_KEY, JSON.stringify(updated));
         }
       }
 
@@ -852,9 +671,6 @@ export const LMSProvider: React.FC<{ children: React.ReactNode }> = ({ children 
             updated = [newCourse, ...prev];
           }
 
-          try {
-            localStorage.setItem(COURSES_CACHE_KEY, JSON.stringify(updated));
-          } catch (e) {}
           return updated;
         });
 
@@ -868,13 +684,7 @@ export const LMSProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const deleteCourse = async (courseId: string) => {
     try {
       await strapiRequest(`/api/courses/${courseId}`, 'DELETE');
-      setCourses((prev) => {
-        const updated = prev.filter((c) => c.id !== courseId);
-        try {
-          localStorage.setItem(COURSES_CACHE_KEY, JSON.stringify(updated));
-        } catch (e) {}
-        return updated;
-      });
+      setCourses((prev) => prev.filter((c) => c.id !== courseId));
       toast.success('Course Deleted', 'Course successfully removed.');
     } catch (err) {
       toast.error('Failed to Delete Course', `${err instanceof Error ? err.message : String(err)}`);
