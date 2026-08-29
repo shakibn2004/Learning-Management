@@ -22,15 +22,16 @@ export const LessonModal: React.FC<LessonModalProps> = ({ courseId, lessonToEdit
   const [type, setType] = useState<'video' | 'text'>(lessonToEdit?.type || 'video');
   const [videoUrl, setVideoUrl] = useState(lessonToEdit?.videoUrl || 'https://www.youtube.com/embed/dQw4w9WgXcQ');
   const [content, setContent] = useState(lessonToEdit?.content || '');
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!title.trim()) return;
+    if (!title.trim() || isSubmitting) return;
 
     const lessonData: Lesson = {
       id: lessonToEdit?.id || `lesson-${Date.now()}`,
       courseId,
-      title,
+      title: title.trim(),
       durationMinutes: Number(durationMinutes),
       type,
       videoUrl: type === 'video' ? videoUrl : undefined,
@@ -38,8 +39,15 @@ export const LessonModal: React.FC<LessonModalProps> = ({ courseId, lessonToEdit
       order: lessonToEdit?.order || nextOrder,
     };
 
-    saveLesson(courseId, lessonData);
-    onClose();
+    setIsSubmitting(true);
+    try {
+      await saveLesson(courseId, lessonData);
+      onClose();
+    } catch (err) {
+      console.error('Failed to save lesson:', err);
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
@@ -129,9 +137,17 @@ export const LessonModal: React.FC<LessonModalProps> = ({ courseId, lessonToEdit
             </button>
             <button
               type="submit"
-              className="px-5 py-2 bg-[#3b82f6] hover:bg-blue-600 text-white rounded-xl font-semibold text-xs shadow-md shadow-blue-500/20"
+              disabled={isSubmitting}
+              className="px-5 py-2 bg-[#3b82f6] hover:bg-blue-600 disabled:opacity-50 disabled:cursor-not-allowed text-white rounded-xl font-semibold text-xs shadow-md shadow-blue-500/20 flex items-center space-x-2"
             >
-              {lessonToEdit ? 'Save Changes' : 'Add Lesson'}
+              {isSubmitting ? (
+                <>
+                  <div className="w-3.5 h-3.5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                  <span>Saving...</span>
+                </>
+              ) : (
+                <span>{lessonToEdit ? 'Save Changes' : 'Add Lesson'}</span>
+              )}
             </button>
           </div>
         </form>

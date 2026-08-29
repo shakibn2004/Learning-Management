@@ -141,7 +141,11 @@ export const LMSProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
       if (!res.ok) {
         const errorData = await res.json().catch(() => ({}));
-        throw new Error(errorData.error || `HTTP error ${res.status}`);
+        const errMsg =
+          errorData.error?.message ||
+          (typeof errorData.error === 'string' ? errorData.error : '') ||
+          `HTTP error ${res.status}`;
+        throw new Error(errMsg);
       }
 
       return await res.json();
@@ -238,6 +242,15 @@ export const LMSProvider: React.FC<{ children: React.ReactNode }> = ({ children 
             }
             const allQuizzes: any[] = quizzesRes?.data || [];
 
+            // Also fetch all lessons directly from backend
+            let lessonsRes: any;
+            try {
+              lessonsRes = await strapiRequest('/api/lessons?pagination[pageSize]=100');
+            } catch (lErr) {
+              console.warn('Lessons fetch error:', lErr);
+            }
+            const allLessons: any[] = lessonsRes?.data || [];
+
             if (coursesRes?.data) {
               const mapped: Course[] = coursesRes.data.map((c: any) => {
                 const cId = c.documentId || String(c.id);
@@ -248,6 +261,17 @@ export const LMSProvider: React.FC<{ children: React.ReactNode }> = ({ children 
                   (q.documentId === 'quiz-c1' && (cId === 'course-1' || c.title?.includes('Next.js'))) ||
                   (q.documentId === 'quiz-c2' && (cId === 'course-2' || c.title?.includes('UI/UX')))
                 );
+
+                const rawLessons =
+                  c.lessons && Array.isArray(c.lessons) && c.lessons.length > 0
+                    ? c.lessons
+                    : allLessons.filter((l: any) =>
+                        l.courseId === cId ||
+                        l.courseId === c.documentId ||
+                        l.courseId === String(c.id) ||
+                        (l.documentId?.startsWith('c1-') && (cId === 'course-1' || c.title?.includes('Next.js'))) ||
+                        (l.documentId?.startsWith('c2-') && (cId === 'course-2' || c.title?.includes('UI/UX')))
+                      );
 
                 return {
                   id: cId,
@@ -261,7 +285,7 @@ export const LMSProvider: React.FC<{ children: React.ReactNode }> = ({ children 
                   instructorName: c.instructorName || '',
                   price: Number(c.price) || 0,
                   published: c.published !== undefined ? c.published : true,
-                  lessons: (c.lessons || []).map((l: any) => ({
+                  lessons: (rawLessons || []).map((l: any) => ({
                     id: l.documentId || String(l.id),
                     courseId: cId,
                     title: l.title,
@@ -758,6 +782,7 @@ export const LMSProvider: React.FC<{ children: React.ReactNode }> = ({ children 
             videoUrl: lessonData.videoUrl,
             content: lessonData.content,
             order: lessonData.order,
+            courseId: courseId,
           },
         });
       } else {
@@ -769,7 +794,7 @@ export const LMSProvider: React.FC<{ children: React.ReactNode }> = ({ children 
             videoUrl: lessonData.videoUrl,
             content: lessonData.content,
             order: lessonData.order,
-            course: courseId,
+            courseId: courseId,
           },
         });
       }
@@ -779,6 +804,7 @@ export const LMSProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         const finalLesson: Lesson = {
           ...lessonData,
           id: returnedLesson.documentId || String(returnedLesson.id),
+          courseId: courseId,
         };
         setCourses((prev) =>
           prev.map((c) => {
