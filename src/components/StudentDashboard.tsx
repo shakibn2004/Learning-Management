@@ -20,13 +20,23 @@ import {
 } from 'lucide-react';
 
 interface StudentDashboardProps {
-  activeTab: string;
-  setActiveTab: (tab: string) => void;
+  activeTab?: string;
+  setActiveTab?: (tab: string) => void;
 }
 
-export const StudentDashboard: React.FC<StudentDashboardProps> = ({ activeTab, setActiveTab }) => {
+export const StudentDashboard: React.FC<StudentDashboardProps> = ({ activeTab: propActiveTab = 'my-courses', setActiveTab }) => {
   const toast = useToast();
   const { courses, progress, quizAttempts, currentUser, enrollInCourse, getCourseProgress, activeRole, refreshData } = useLMS();
+
+  const [localTab, setLocalTab] = useState(propActiveTab);
+  const activeTab = localTab || propActiveTab;
+
+  const switchTab = (tab: string) => {
+    setLocalTab(tab);
+    if (setActiveTab) {
+      setActiveTab(tab);
+    }
+  };
 
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('ALL');
@@ -111,7 +121,7 @@ export const StudentDashboard: React.FC<StudentDashboardProps> = ({ activeTab, s
 
         <div className="flex items-center space-x-2 bg-[#141d2b] p-1.5 rounded-2xl border border-slate-800 shrink-0">
           <button
-            onClick={() => setActiveTab('my-courses')}
+            onClick={() => switchTab('my-courses')}
             className={`flex items-center space-x-2 px-3.5 py-2 rounded-xl text-xs font-bold transition-all ${
               activeTab === 'my-courses'
                 ? 'bg-[#3b82f6] text-white shadow-md shadow-blue-500/20'
@@ -123,7 +133,7 @@ export const StudentDashboard: React.FC<StudentDashboardProps> = ({ activeTab, s
           </button>
 
           <button
-            onClick={() => setActiveTab('courses')}
+            onClick={() => switchTab('courses')}
             className={`flex items-center space-x-2 px-3.5 py-2 rounded-xl text-xs font-bold transition-all ${
               activeTab === 'courses'
                 ? 'bg-[#3b82f6] text-white shadow-md shadow-blue-500/20'
@@ -269,7 +279,7 @@ export const StudentDashboard: React.FC<StudentDashboardProps> = ({ activeTab, s
                 You are currently not enrolled in any courses. Explore the catalog and click "Enroll Now" to get started!
               </p>
               <button
-                onClick={() => setActiveTab('courses')}
+                onClick={() => switchTab('courses')}
                 className="mt-4 px-5 py-2.5 bg-[#3b82f6] hover:bg-blue-600 text-white text-xs font-bold rounded-xl shadow-md shadow-blue-500/20"
               >
                 Browse Course Catalog
@@ -354,7 +364,7 @@ export const StudentDashboard: React.FC<StudentDashboardProps> = ({ activeTab, s
                     {isEnrolled ? (
                       <button
                         onClick={() => {
-                          setActiveTab('my-courses');
+                          switchTab('my-courses');
                           setActiveCourseForLessons(course);
                         }}
                         className="w-full py-2.5 px-4 bg-[#10b981]/15 hover:bg-[#10b981]/25 text-[#34d399] border border-[#10b981]/30 rounded-xl text-xs font-bold flex items-center justify-center space-x-2"

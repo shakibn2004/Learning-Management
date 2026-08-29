@@ -152,8 +152,10 @@ export const LMSProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   };
 
   // Pure Database Integration: Load state directly from Strapi API on mount with NO local caching
-  const initData = useCallback(async () => {
-    setIsLoading(true);
+  const initData = useCallback(async (isInitial = false) => {
+    if (isInitial) {
+      setIsLoading(true);
+    }
 
     // Clean up any stale legacy cache from previous versions
     if (typeof window !== 'undefined') {
@@ -166,26 +168,28 @@ export const LMSProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       } catch (e) {}
     }
 
-      // 1. Restore & verify authenticated user directly with backend database (Fast 0.2s check)
-      const savedToken = typeof window !== 'undefined' ? localStorage.getItem(AUTH_TOKEN_KEY) : null;
-      if (savedToken) {
-        setAuthToken(savedToken);
-        try {
-          const meRes = await strapiRequest('/api/lms-users/me');
-          if (meRes?.user) {
-            setAuthUser(meRes.user);
-            setActiveRole(meRes.user.role);
-          } else {
-            logout();
-          }
-        } catch (verifyErr) {
-          console.warn('Backend user verification failed:', verifyErr);
+    // 1. Restore & verify authenticated user directly with backend database (Fast 0.2s check)
+    const savedToken = typeof window !== 'undefined' ? localStorage.getItem(AUTH_TOKEN_KEY) : null;
+    if (savedToken) {
+      setAuthToken(savedToken);
+      try {
+        const meRes = await strapiRequest('/api/lms-users/me');
+        if (meRes?.user) {
+          setAuthUser(meRes.user);
+          setActiveRole(meRes.user.role);
+        } else {
           logout();
         }
+      } catch (verifyErr) {
+        console.warn('Backend user verification failed:', verifyErr);
+        logout();
       }
+    }
 
-      // Immediately unblock loading spinner so user isn't stuck waiting
+    // Immediately unblock loading spinner so user isn't stuck waiting
+    if (isInitial) {
       setIsLoading(false);
+    }
 
       // 2. Fetch all collections in parallel without blocking session
       await Promise.allSettled([
@@ -336,7 +340,11 @@ export const LMSProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   }, []);
 
   useEffect(() => {
-    initData();
+    initData(true);
+  }, [initData]);
+
+  const refreshData = useCallback(async () => {
+    await initData(false);
   }, [initData]);
 
   // Authentication Methods
@@ -1085,7 +1093,7 @@ export const LMSProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         getCourseProgress,
         isLessonCompleted,
         canPerformAction,
-        refreshData: initData,
+        refreshData,
       }}
     >
       {children}

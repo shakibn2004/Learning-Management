@@ -103,9 +103,7 @@ export default function LoginPage() {
       if (result.success && result.user) {
         setSuccessRole(result.user.role);
         const destination = getDestination(result.user.role);
-        setTimeout(() => {
-          router.push(destination);
-        }, 600);
+        router.replace(destination);
       } else {
         setErrorMessage(result.error || 'Invalid email or password.');
       }
