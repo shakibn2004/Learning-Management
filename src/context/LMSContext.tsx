@@ -166,7 +166,7 @@ export const LMSProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       } catch (e) {}
     }
 
-      // 1. Restore & verify authenticated user directly with backend database
+      // 1. Restore & verify authenticated user directly with backend database (Fast 0.2s check)
       const savedToken = typeof window !== 'undefined' ? localStorage.getItem(AUTH_TOKEN_KEY) : null;
       if (savedToken) {
         setAuthToken(savedToken);
@@ -184,141 +184,155 @@ export const LMSProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         }
       }
 
-      // 2. Fetch Users directly from Strapi Database
-      try {
-        const usersRes = await strapiRequest('/api/lms-users?pagination[pageSize]=100');
-        if (usersRes?.data) {
-          setUsers(
-            usersRes.data.map((u: any) => ({
-              id: u.documentId || String(u.id),
-              name: u.name,
-              email: u.email,
-              role: u.role,
-              avatar: u.avatar || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=200&q=80',
-              enrolledCourseIds: u.enrolledCourseIds || [],
-              createdAt: u.createdAt,
-            }))
-          );
-        }
-      } catch (err) {
-        console.warn('Users fetch failed:', err);
-      }
+      // Immediately unblock loading spinner so user isn't stuck waiting
+      setIsLoading(false);
 
-      // 3. Fetch Courses with lessons & quiz directly from Strapi Database
-      try {
-        let coursesRes: any;
-        try {
-          coursesRes = await strapiRequest('/api/courses?populate[0]=lessons&populate[1]=quiz&pagination[pageSize]=100');
-        } catch {
+      // 2. Fetch all collections in parallel without blocking session
+      await Promise.allSettled([
+        // Fetch Users
+        (async () => {
           try {
-            coursesRes = await strapiRequest('/api/courses?populate=*&pagination[pageSize]=100');
-          } catch {
-            coursesRes = await strapiRequest('/api/courses?pagination[pageSize]=100');
+            const usersRes = await strapiRequest('/api/lms-users?pagination[pageSize]=100');
+            if (usersRes?.data) {
+              setUsers(
+                usersRes.data.map((u: any) => ({
+                  id: u.documentId || String(u.id),
+                  name: u.name,
+                  email: u.email,
+                  role: u.role,
+                  avatar: u.avatar || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=200&q=80',
+                  enrolledCourseIds: u.enrolledCourseIds || [],
+                  createdAt: u.createdAt,
+                }))
+              );
+            }
+          } catch (err) {
+            console.warn('Users fetch failed:', err);
           }
-        }
+        })(),
 
-        if (coursesRes?.data) {
-          const mapped: Course[] = coursesRes.data.map((c: any) => ({
-            id: c.documentId || String(c.id),
-            title: c.title || '',
-            subtitle: c.subtitle || '',
-            description: c.description || '',
-            category: c.category || 'Web Development',
-            level: c.level || 'Intermediate',
-            coverImage: c.coverImage || 'https://images.unsplash.com/photo-1516321318423-f06f85e504b3?auto=format&fit=crop&w=800&q=80',
-            instructorId: c.instructorId || '',
-            instructorName: c.instructorName || '',
-            price: Number(c.price) || 0,
-            published: c.published !== undefined ? c.published : true,
-            lessons: (c.lessons || []).map((l: any) => ({
-              id: l.documentId || String(l.id),
-              courseId: c.documentId || String(c.id),
-              title: l.title,
-              durationMinutes: Number(l.durationMinutes) || 0,
-              type: l.type,
-              videoUrl: l.videoUrl,
-              content: l.content,
-              order: Number(l.order) || 1,
-            })).sort((a: any, b: any) => a.order - b.order),
-            quiz: c.quiz ? {
-              id: c.quiz.documentId || String(c.quiz.id),
-              courseId: c.documentId || String(c.id),
-              title: c.quiz.title,
-              description: c.quiz.description,
-              passingScore: Number(c.quiz.passingScore) || 70,
-              questions: c.quiz.questions || [],
-            } : undefined,
-            createdAt: c.createdAt || new Date().toISOString(),
-          }));
-          setCourses(mapped);
-        }
-      } catch (err) {
-        console.warn('Courses fetch failed:', err);
-      }
+        // Fetch Courses with lessons & quiz
+        (async () => {
+          try {
+            let coursesRes: any;
+            try {
+              coursesRes = await strapiRequest('/api/courses?populate[0]=lessons&populate[1]=quiz&pagination[pageSize]=100');
+            } catch {
+              try {
+                coursesRes = await strapiRequest('/api/courses?populate=*&pagination[pageSize]=100');
+              } catch {
+                coursesRes = await strapiRequest('/api/courses?pagination[pageSize]=100');
+              }
+            }
 
-      // 4. Fetch User Course Progress directly from Strapi Database
-      try {
-        const progRes = await strapiRequest('/api/user-course-progresses?pagination[pageSize]=100');
-        if (progRes?.data) {
-          const mappedProg = progRes.data.map((p: any) => ({
-            id: p.documentId || String(p.id),
-            userId: p.userId,
-            courseId: p.courseId,
-            completedLessonIds: p.completedLessonIds || [],
-            lastAccessedLessonId: p.lastAccessedLessonId,
-            updatedAt: p.updatedAt || new Date().toISOString(),
-          }));
-          setProgress(mappedProg);
-        }
-      } catch (err) {
-        console.warn('Progress fetch failed:', err);
-      }
+            if (coursesRes?.data) {
+              const mapped: Course[] = coursesRes.data.map((c: any) => ({
+                id: c.documentId || String(c.id),
+                title: c.title || '',
+                subtitle: c.subtitle || '',
+                description: c.description || '',
+                category: c.category || 'Web Development',
+                level: c.level || 'Intermediate',
+                coverImage: c.coverImage || 'https://images.unsplash.com/photo-1516321318423-f06f85e504b3?auto=format&fit=crop&w=800&q=80',
+                instructorId: c.instructorId || '',
+                instructorName: c.instructorName || '',
+                price: Number(c.price) || 0,
+                published: c.published !== undefined ? c.published : true,
+                lessons: (c.lessons || []).map((l: any) => ({
+                  id: l.documentId || String(l.id),
+                  courseId: c.documentId || String(c.id),
+                  title: l.title,
+                  durationMinutes: Number(l.durationMinutes) || 0,
+                  type: l.type,
+                  videoUrl: l.videoUrl,
+                  content: l.content,
+                  order: Number(l.order) || 1,
+                })).sort((a: any, b: any) => a.order - b.order),
+                quiz: c.quiz ? {
+                  id: c.quiz.documentId || String(c.quiz.id),
+                  courseId: c.documentId || String(c.id),
+                  title: c.quiz.title,
+                  description: c.quiz.description,
+                  passingScore: Number(c.quiz.passingScore) || 70,
+                  questions: c.quiz.questions || [],
+                } : undefined,
+                createdAt: c.createdAt || new Date().toISOString(),
+              }));
+              setCourses(mapped);
+            }
+          } catch (err) {
+            console.warn('Courses fetch failed:', err);
+          }
+        })(),
 
-      // 5. Fetch Blog Posts directly from Strapi Database
-      try {
-        const blogsRes = await strapiRequest('/api/blog-posts?pagination[pageSize]=100');
-        if (blogsRes?.data) {
-          setBlogPosts(
-            blogsRes.data.map((b: any) => ({
-              id: b.documentId || String(b.id),
-              title: b.title,
-              excerpt: b.excerpt,
-              content: b.content,
-              coverImage: b.coverImage,
-              authorId: b.authorId,
-              authorName: b.authorName,
-              authorRole: b.authorRole,
-              status: b.status,
-              publishedAt: b.publishedAt,
-              createdAt: b.createdAt,
-              tags: b.tags || [],
-            }))
-          );
-        }
-      } catch (err) {
-        console.warn('Blogs fetch failed:', err);
-      }
+        // Fetch User Course Progress
+        (async () => {
+          try {
+            const progRes = await strapiRequest('/api/user-course-progresses?pagination[pageSize]=100');
+            if (progRes?.data) {
+              const mappedProg = progRes.data.map((p: any) => ({
+                id: p.documentId || String(p.id),
+                userId: p.userId,
+                courseId: p.courseId,
+                completedLessonIds: p.completedLessonIds || [],
+                lastAccessedLessonId: p.lastAccessedLessonId,
+                updatedAt: p.updatedAt || new Date().toISOString(),
+              }));
+              setProgress(mappedProg);
+            }
+          } catch (err) {
+            console.warn('Progress fetch failed:', err);
+          }
+        })(),
 
-      // 6. Fetch Quiz Attempts directly from Strapi Database
-      try {
-        const attemptsRes = await strapiRequest('/api/quiz-attempts?pagination[pageSize]=100');
-        if (attemptsRes?.data) {
-          const mappedAttempts = attemptsRes.data.map((a: any) => ({
-            id: a.documentId || String(a.id),
-            quizId: a.quizId,
-            studentId: a.studentId,
-            scorePercentage: Number(a.scorePercentage) || 0,
-            passed: a.passed,
-            answers: a.answers || {},
-            completedAt: a.completedAt,
-          }));
-          setQuizAttempts(mappedAttempts);
-        }
-      } catch (err) {
-        console.warn('Quiz attempts fetch failed:', err);
-      } finally {
-        setIsLoading(false);
-      }
+        // Fetch Blog Posts
+        (async () => {
+          try {
+            const blogsRes = await strapiRequest('/api/blog-posts?pagination[pageSize]=100');
+            if (blogsRes?.data) {
+              setBlogPosts(
+                blogsRes.data.map((b: any) => ({
+                  id: b.documentId || String(b.id),
+                  title: b.title,
+                  excerpt: b.excerpt,
+                  content: b.content,
+                  coverImage: b.coverImage,
+                  authorId: b.authorId,
+                  authorName: b.authorName,
+                  authorRole: b.authorRole,
+                  status: b.status,
+                  publishedAt: b.publishedAt,
+                  createdAt: b.createdAt,
+                  tags: b.tags || [],
+                }))
+              );
+            }
+          } catch (err) {
+            console.warn('Blogs fetch failed:', err);
+          }
+        })(),
+
+        // Fetch Quiz Attempts
+        (async () => {
+          try {
+            const attemptsRes = await strapiRequest('/api/quiz-attempts?pagination[pageSize]=100');
+            if (attemptsRes?.data) {
+              const mappedAttempts = attemptsRes.data.map((a: any) => ({
+                id: a.documentId || String(a.id),
+                quizId: a.quizId,
+                studentId: a.studentId,
+                scorePercentage: Number(a.scorePercentage) || 0,
+                passed: a.passed,
+                answers: a.answers || {},
+                completedAt: a.completedAt,
+              }));
+              setQuizAttempts(mappedAttempts);
+            }
+          } catch (err) {
+            console.warn('Quiz attempts fetch failed:', err);
+          }
+        })(),
+      ]);
   }, []);
 
   useEffect(() => {
