@@ -1,6 +1,6 @@
 'use client';
 
-import React, { createContext, useContext, useState, useEffect } from 'react';
+import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import { User, UserRole, Course, Lesson, Quiz, QuizAttempt, UserCourseProgress, BlogPost } from '../types';
 import { useToast } from './ToastContext';
 
@@ -41,6 +41,7 @@ interface LMSContextType {
   getCourseProgress: (userId: string, courseId: string) => number;
   isLessonCompleted: (userId: string, courseId: string, lessonId: string) => boolean;
   canPerformAction: (action: PermissionAction, targetOwnerId?: string) => boolean;
+  refreshData: () => Promise<void>;
 }
 
 export type PermissionAction =
@@ -151,20 +152,19 @@ export const LMSProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   };
 
   // Pure Database Integration: Load state directly from Strapi API on mount with NO local caching
-  useEffect(() => {
-    const initData = async () => {
-      setIsLoading(true);
+  const initData = useCallback(async () => {
+    setIsLoading(true);
 
-      // Clean up any stale legacy cache from previous versions
-      if (typeof window !== 'undefined') {
-        try {
-          localStorage.removeItem('lms_cached_courses_v2');
-          localStorage.removeItem('lms_cached_progress_v2');
-          localStorage.removeItem('lms_cached_attempts_v2');
-          localStorage.removeItem('lms_master_state_v1');
-          localStorage.removeItem('lms_auth_user');
-        } catch (e) {}
-      }
+    // Clean up any stale legacy cache from previous versions
+    if (typeof window !== 'undefined') {
+      try {
+        localStorage.removeItem('lms_cached_courses_v2');
+        localStorage.removeItem('lms_cached_progress_v2');
+        localStorage.removeItem('lms_cached_attempts_v2');
+        localStorage.removeItem('lms_master_state_v1');
+        localStorage.removeItem('lms_auth_user');
+      } catch (e) {}
+    }
 
       // 1. Restore & verify authenticated user directly with backend database
       const savedToken = typeof window !== 'undefined' ? localStorage.getItem(AUTH_TOKEN_KEY) : null;
@@ -206,7 +206,17 @@ export const LMSProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
       // 3. Fetch Courses with lessons & quiz directly from Strapi Database
       try {
-        const coursesRes = await strapiRequest('/api/courses?populate[lessons]=*&populate[quiz]=*&pagination[pageSize]=100');
+        let coursesRes: any;
+        try {
+          coursesRes = await strapiRequest('/api/courses?populate[0]=lessons&populate[1]=quiz&pagination[pageSize]=100');
+        } catch {
+          try {
+            coursesRes = await strapiRequest('/api/courses?populate=*&pagination[pageSize]=100');
+          } catch {
+            coursesRes = await strapiRequest('/api/courses?pagination[pageSize]=100');
+          }
+        }
+
         if (coursesRes?.data) {
           const mapped: Course[] = coursesRes.data.map((c: any) => ({
             id: c.documentId || String(c.id),
@@ -309,10 +319,11 @@ export const LMSProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       } finally {
         setIsLoading(false);
       }
-    };
-
-    initData();
   }, []);
+
+  useEffect(() => {
+    initData();
+  }, [initData]);
 
   // Authentication Methods
   const login = async (email: string, password: string): Promise<{ success: boolean; error?: string; user?: User }> => {
@@ -1060,6 +1071,7 @@ export const LMSProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         getCourseProgress,
         isLessonCompleted,
         canPerformAction,
+        refreshData: initData,
       }}
     >
       {children}

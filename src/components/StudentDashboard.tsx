@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useLMS } from '../context/LMSContext';
 import { useToast } from '../context/ToastContext';
 import { Course } from '../types';
@@ -16,6 +16,7 @@ import {
   Zap,
   Video,
   Star,
+  RotateCw,
 } from 'lucide-react';
 
 interface StudentDashboardProps {
@@ -25,16 +26,34 @@ interface StudentDashboardProps {
 
 export const StudentDashboard: React.FC<StudentDashboardProps> = ({ activeTab, setActiveTab }) => {
   const toast = useToast();
-  const { courses, progress, quizAttempts, currentUser, enrollInCourse, getCourseProgress, activeRole } = useLMS();
+  const { courses, progress, quizAttempts, currentUser, enrollInCourse, getCourseProgress, activeRole, refreshData } = useLMS();
 
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('ALL');
+  const [isRefreshing, setIsRefreshing] = useState(false);
 
   const [activeCourseForLessons, setActiveCourseForLessons] = useState<Course | null>(null);
   const [activeCourseForQuiz, setActiveCourseForQuiz] = useState<Course | null>(null);
 
+  // Live real-time fetch from database on mount
+  useEffect(() => {
+    refreshData();
+  }, [refreshData]);
+
+  const handleManualRefresh = async () => {
+    setIsRefreshing(true);
+    try {
+      await refreshData();
+      toast.success('Database Synced', 'Fresh course catalog and enrollment records loaded from database.');
+    } catch (e: any) {
+      toast.error('Sync Failed', e.message || 'Could not fetch from database.');
+    } finally {
+      setIsRefreshing(false);
+    }
+  };
+
   const isCourseEnrolled = (course: Course) => {
-    if (!currentUser?.enrolledCourseIds) return false;
+    if (!currentUser?.enrolledCourseIds || !Array.isArray(currentUser.enrolledCourseIds)) return false;
     return currentUser.enrolledCourseIds.some((eId: any) => {
       const sEId = String(eId);
       const sCId = String(course.id);
@@ -43,7 +62,7 @@ export const StudentDashboard: React.FC<StudentDashboardProps> = ({ activeTab, s
     });
   };
 
-  const availableCourses = courses.filter((c) => c.published !== false);
+  const availableCourses = courses.filter((c) => c && c.published !== false);
 
   const enrolledCourses = availableCourses.filter((c) => isCourseEnrolled(c));
 
@@ -69,8 +88,8 @@ export const StudentDashboard: React.FC<StudentDashboardProps> = ({ activeTab, s
 
   const filteredCourses = availableCourses.filter((c) => {
     const matchesSearch =
-      c.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      c.description.toLowerCase().includes(searchTerm.toLowerCase());
+      (c.title || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+      (c.description || '').toLowerCase().includes(searchTerm.toLowerCase());
     const matchesCat = selectedCategory === 'ALL' || c.category === selectedCategory;
     return matchesSearch && matchesCat;
   });
@@ -85,7 +104,7 @@ export const StudentDashboard: React.FC<StudentDashboardProps> = ({ activeTab, s
           </h2>
           <p className="text-xs text-slate-400 mt-0.5">
             {activeTab === 'my-courses'
-              ? `Welcome back, ${currentUser.name}! Continue your interactive learning journey.`
+              ? `Welcome back, ${currentUser.name || 'Learner'}! Continue your interactive learning journey.`
               : 'Browse top-rated full-stack courses, inspect curricula, and enroll instantly.'}
           </p>
         </div>
@@ -113,6 +132,16 @@ export const StudentDashboard: React.FC<StudentDashboardProps> = ({ activeTab, s
           >
             <BookOpen className="w-4 h-4" />
             <span>All Catalog ({availableCourses.length})</span>
+          </button>
+
+          <button
+            onClick={handleManualRefresh}
+            disabled={isRefreshing}
+            title="Sync Live Database Records"
+            className="flex items-center space-x-1.5 px-3 py-2 rounded-xl text-xs font-semibold bg-[#1a2436] hover:bg-slate-800 text-slate-300 hover:text-white border border-slate-700/50 transition-all disabled:opacity-50"
+          >
+            <RotateCw className={`w-3.5 h-3.5 text-cyan-400 ${isRefreshing ? 'animate-spin' : ''}`} />
+            <span className="hidden md:inline">{isRefreshing ? 'Syncing...' : 'Sync DB'}</span>
           </button>
         </div>
       </div>
