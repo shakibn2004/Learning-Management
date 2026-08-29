@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useLMS } from '../context/LMSContext';
@@ -280,6 +280,14 @@ export default function DynamicFramerLandingPage() {
   const { courses, currentUser, isAuthenticated, logout } = useLMS();
   const [activeTab, setActiveTab] = useState<string>('all');
   const [openFaq, setOpenFaq] = useState<number | null>(0);
+  const [scrolled, setScrolled] = useState(false);
+
+  useEffect(() => {
+    const handleScroll = () => setScrolled(window.scrollY > 20);
+    window.addEventListener('scroll', handleScroll, { passive: true });
+    handleScroll();
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
 
   // Always use crystal clear local high-res projects
   const filteredProjects = activeTab === 'all'
@@ -292,12 +300,18 @@ export default function DynamicFramerLandingPage() {
       });
 
   return (
-    <div className="w-full bg-white text-slate-900 overflow-x-hidden pt-16 sm:pt-20">
+    <div className="w-full text-slate-900 overflow-x-hidden">
       {/* =========================================================================
           TOP FLOATING GLASSMORPHIC NAVBAR WITH LOGIN & REGISTRATION
       ========================================================================= */}
-      <header className="fixed top-0 left-0 right-0 z-50 bg-slate-950/85 backdrop-blur-xl border-b border-white/10 transition-all duration-300">
-        <div className="max-w-7xl mx-auto px-4 sm:px-8 h-16 sm:h-20 flex items-center justify-between">
+      <header className={`fixed left-0 right-0 z-50 transition-all duration-500 ease-out ${
+        scrolled
+          ? 'top-3 sm:top-4 mx-3 sm:mx-6 lg:mx-auto lg:max-w-6xl bg-slate-950/75 backdrop-blur-2xl border border-white/15 shadow-2xl shadow-black/30 rounded-2xl'
+          : 'top-0 mx-0 bg-transparent border-b border-transparent rounded-none'
+      }`}>
+        <div className={`px-4 sm:px-8 flex items-center justify-between transition-all duration-500 ${
+          scrolled ? 'h-14 sm:h-16' : 'h-16 sm:h-20'
+        }`}>
           {/* Brand Logo */}
           <Link href="/" className="flex items-center space-x-2.5 sm:space-x-3 group">
             <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-gradient-to-tr from-cyan-500 via-blue-600 to-indigo-600 flex items-center justify-center shadow-lg shadow-cyan-500/20 group-hover:scale-105 transition-transform">
@@ -371,13 +385,13 @@ export default function DynamicFramerLandingPage() {
       ========================================================================= */}
       <section
         style={{
-          backgroundImage: `url('/hero-china-campus.jpg')`,
+          backgroundImage: `url('/grok-image-5e595c88-c993-472b-9a20-09c7258ad393.jpg')`,
           backgroundSize: 'cover',
           backgroundPosition: 'center 45%',
           backgroundRepeat: 'no-repeat',
           backgroundAttachment: 'fixed',
         }}
-        className="relative min-h-[750px] sm:min-h-[850px] flex items-center py-20 sm:py-28"
+        className="relative min-h-[750px] sm:min-h-[850px] flex items-center pt-28 sm:pt-36 pb-20 sm:pb-28"
       >
         {/* Subtle Dark Vignette for Text Clarity over Campus Lawn */}
         <div className="absolute inset-0 bg-gradient-to-r from-slate-950/85 via-slate-950/40 to-transparent pointer-events-none" />
