@@ -26,6 +26,7 @@ interface LMSContextType {
   logout: () => void;
   switchRole: (role: UserRole) => void;
   updateUserRole: (userId: string, newRole: UserRole) => void;
+  deleteUser: (userId: string) => Promise<void>;
   enrollInCourse: (courseId: string) => void;
   toggleLessonComplete: (courseId: string, lessonId: string) => void;
   saveCourse: (course: Course) => void;
@@ -158,153 +159,150 @@ export const LMSProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         console.warn('Failed to parse cached courses', e);
       }
 
+      // Restore session from localStorage if available
       try {
-        // Restore session from localStorage if available
         const savedToken = localStorage.getItem(AUTH_TOKEN_KEY);
         const savedUser = localStorage.getItem(AUTH_USER_KEY);
         if (savedToken && savedUser) {
-          try {
-            const parsedUser: User = JSON.parse(savedUser);
-            setAuthToken(savedToken);
-            setAuthUser(parsedUser);
-            setActiveRole(parsedUser.role);
-          } catch (e) {
-            console.warn('Failed to parse saved user', e);
-          }
+          const parsedUser: User = JSON.parse(savedUser);
+          setAuthToken(savedToken);
+          setAuthUser(parsedUser);
+          setActiveRole(parsedUser.role);
         }
+      } catch (e) {
+        console.warn('Failed session restore:', e);
+      } finally {
+        // Immediately unblock UI loading spinner
+        setIsLoading(false);
+      }
 
-        // 1. Fetch Users (isolated try)
-        try {
-          const usersRes = await strapiRequest('/api/lms-users');
-          if (usersRes?.data) {
-            setUsers(
-              usersRes.data.map((u: any) => ({
-                id: u.documentId || String(u.id),
-                name: u.name,
-                email: u.email,
-                role: u.role,
-                avatar: u.avatar || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=200&q=80',
-                enrolledCourseIds: u.enrolledCourseIds || [],
-                createdAt: u.createdAt,
-              }))
-            );
-          }
-        } catch (err) {
-          console.warn('Users fetch failed:', err);
-        }
-
-        // 2. Fetch Courses with populated lessons and quiz (isolated try)
-        try {
-          const coursesRes = await strapiRequest('/api/courses?populate[lessons]=*&populate[quiz]=*&pagination[pageSize]=100');
-          if (coursesRes?.data) {
-            const mapped: Course[] = coursesRes.data.map((c: any) => ({
-              id: c.documentId || String(c.id),
-              title: c.title || '',
-              subtitle: c.subtitle || '',
-              description: c.description || '',
-              category: c.category || 'Web Development',
-              level: c.level || 'Intermediate',
-              coverImage: c.coverImage || 'https://images.unsplash.com/photo-1516321318423-f06f85e504b3?auto=format&fit=crop&w=800&q=80',
-              instructorId: c.instructorId || '',
-              instructorName: c.instructorName || '',
-              price: Number(c.price) || 0,
-              published: c.published !== undefined ? c.published : true,
-              lessons: (c.lessons || []).map((l: any) => ({
-                id: l.documentId || String(l.id),
-                courseId: c.documentId || String(c.id),
-                title: l.title,
-                durationMinutes: Number(l.durationMinutes) || 0,
-                type: l.type,
-                videoUrl: l.videoUrl,
-                content: l.content,
-                order: Number(l.order) || 1,
-              })).sort((a: any, b: any) => a.order - b.order),
-              quiz: c.quiz ? {
-                id: c.quiz.documentId || String(c.quiz.id),
-                courseId: c.documentId || String(c.id),
-                title: c.quiz.title,
-                description: c.quiz.description,
-                passingScore: Number(c.quiz.passingScore) || 70,
-                questions: c.quiz.questions || [],
-              } : undefined,
-              createdAt: c.createdAt || new Date().toISOString(),
-            }));
-            setCourses(mapped);
-            try {
-              localStorage.setItem(COURSES_CACHE_KEY, JSON.stringify(mapped));
-            } catch (e) {}
-          }
-        } catch (err) {
-          console.warn('Courses fetch failed:', err);
-        }
-
-        // 3. Fetch progress (isolated try)
-        try {
-          const progRes = await strapiRequest('/api/user-course-progresses');
-          if (progRes?.data) {
-            setProgress(
-              progRes.data.map((p: any) => ({
-                id: p.documentId || String(p.id),
-                userId: p.userId,
-                courseId: p.courseId,
-                completedLessonIds: p.completedLessonIds || [],
-                lastAccessedLessonId: p.lastAccessedLessonId,
-                updatedAt: p.updatedAt || new Date().toISOString(),
-              }))
-            );
-          }
-        } catch (err) {
-          console.warn('Progress fetch failed:', err);
-        }
-
-        // 4. Fetch blogs (isolated try)
-        try {
-          const blogsRes = await strapiRequest('/api/blog-posts');
-          if (blogsRes?.data) {
-            setBlogPosts(
-              blogsRes.data.map((b: any) => ({
-                id: b.documentId || String(b.id),
-                title: b.title,
-                excerpt: b.excerpt,
-                content: b.content,
-                coverImage: b.coverImage,
-                authorId: b.authorId,
-                authorName: b.authorName,
-                authorRole: b.authorRole,
-                status: b.status,
-                publishedAt: b.publishedAt,
-                createdAt: b.createdAt,
-                tags: b.tags || [],
-              }))
-            );
-          }
-        } catch (err) {
-          console.warn('Blogs fetch failed:', err);
-        }
-
-        // 5. Fetch quiz attempts (isolated try)
-        try {
-          const attemptsRes = await strapiRequest('/api/quiz-attempts');
-          if (attemptsRes?.data) {
-            setQuizAttempts(
-              attemptsRes.data.map((a: any) => ({
-                id: a.documentId || String(a.id),
-                quizId: a.quizId,
-                studentId: a.studentId,
-                scorePercentage: Number(a.scorePercentage) || 0,
-                passed: a.passed,
-                answers: a.answers || {},
-                completedAt: a.completedAt,
-              }))
-            );
-          }
-        } catch (err) {
-          console.warn('Quiz attempts fetch failed:', err);
+      // 1. Fetch Users (isolated try)
+      try {
+        const usersRes = await strapiRequest('/api/lms-users');
+        if (usersRes?.data) {
+          setUsers(
+            usersRes.data.map((u: any) => ({
+              id: u.documentId || String(u.id),
+              name: u.name,
+              email: u.email,
+              role: u.role,
+              avatar: u.avatar || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=200&q=80',
+              enrolledCourseIds: u.enrolledCourseIds || [],
+              createdAt: u.createdAt,
+            }))
+          );
         }
       } catch (err) {
-        console.error('Failed to initialize LMS data from Strapi API:', err);
-      } finally {
-        setIsLoading(false);
+        console.warn('Users fetch failed:', err);
+      }
+
+      // 2. Fetch Courses with populated lessons and quiz (isolated try)
+      try {
+        const coursesRes = await strapiRequest('/api/courses?populate[lessons]=*&populate[quiz]=*&pagination[pageSize]=100');
+        if (coursesRes?.data) {
+          const mapped: Course[] = coursesRes.data.map((c: any) => ({
+            id: c.documentId || String(c.id),
+            title: c.title || '',
+            subtitle: c.subtitle || '',
+            description: c.description || '',
+            category: c.category || 'Web Development',
+            level: c.level || 'Intermediate',
+            coverImage: c.coverImage || 'https://images.unsplash.com/photo-1516321318423-f06f85e504b3?auto=format&fit=crop&w=800&q=80',
+            instructorId: c.instructorId || '',
+            instructorName: c.instructorName || '',
+            price: Number(c.price) || 0,
+            published: c.published !== undefined ? c.published : true,
+            lessons: (c.lessons || []).map((l: any) => ({
+              id: l.documentId || String(l.id),
+              courseId: c.documentId || String(c.id),
+              title: l.title,
+              durationMinutes: Number(l.durationMinutes) || 0,
+              type: l.type,
+              videoUrl: l.videoUrl,
+              content: l.content,
+              order: Number(l.order) || 1,
+            })).sort((a: any, b: any) => a.order - b.order),
+            quiz: c.quiz ? {
+              id: c.quiz.documentId || String(c.quiz.id),
+              courseId: c.documentId || String(c.id),
+              title: c.quiz.title,
+              description: c.quiz.description,
+              passingScore: Number(c.quiz.passingScore) || 70,
+              questions: c.quiz.questions || [],
+            } : undefined,
+            createdAt: c.createdAt || new Date().toISOString(),
+          }));
+          setCourses(mapped);
+          try {
+            localStorage.setItem(COURSES_CACHE_KEY, JSON.stringify(mapped));
+          } catch (e) {}
+        }
+      } catch (err) {
+        console.warn('Courses fetch failed:', err);
+      }
+
+      // 3. Fetch progress (isolated try)
+      try {
+        const progRes = await strapiRequest('/api/user-course-progresses');
+        if (progRes?.data) {
+          setProgress(
+            progRes.data.map((p: any) => ({
+              id: p.documentId || String(p.id),
+              userId: p.userId,
+              courseId: p.courseId,
+              completedLessonIds: p.completedLessonIds || [],
+              lastAccessedLessonId: p.lastAccessedLessonId,
+              updatedAt: p.updatedAt || new Date().toISOString(),
+            }))
+          );
+        }
+      } catch (err) {
+        console.warn('Progress fetch failed:', err);
+      }
+
+      // 4. Fetch blogs (isolated try)
+      try {
+        const blogsRes = await strapiRequest('/api/blog-posts');
+        if (blogsRes?.data) {
+          setBlogPosts(
+            blogsRes.data.map((b: any) => ({
+              id: b.documentId || String(b.id),
+              title: b.title,
+              excerpt: b.excerpt,
+              content: b.content,
+              coverImage: b.coverImage,
+              authorId: b.authorId,
+              authorName: b.authorName,
+              authorRole: b.authorRole,
+              status: b.status,
+              publishedAt: b.publishedAt,
+              createdAt: b.createdAt,
+              tags: b.tags || [],
+            }))
+          );
+        }
+      } catch (err) {
+        console.warn('Blogs fetch failed:', err);
+      }
+
+      // 5. Fetch quiz attempts (isolated try)
+      try {
+        const attemptsRes = await strapiRequest('/api/quiz-attempts');
+        if (attemptsRes?.data) {
+          setQuizAttempts(
+            attemptsRes.data.map((a: any) => ({
+              id: a.documentId || String(a.id),
+              quizId: a.quizId,
+              studentId: a.studentId,
+              scorePercentage: Number(a.scorePercentage) || 0,
+              passed: a.passed,
+              answers: a.answers || {},
+              completedAt: a.completedAt,
+            }))
+          );
+        }
+      } catch (err) {
+        console.warn('Quiz attempts fetch failed:', err);
       }
     };
 
@@ -428,6 +426,22 @@ export const LMSProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     } catch (err: any) {
       console.error('Role update error:', err);
       toast.error('Database Sync Failed', err.message || 'Could not update user role in database.');
+    }
+  };
+
+  const deleteUser = async (userId: string) => {
+    try {
+      if (currentUser?.id === userId) {
+        toast.error('Operation Denied', 'You cannot delete your own active admin account.');
+        return;
+      }
+
+      await strapiRequest(`/api/lms-users/${userId}`, 'DELETE');
+      setUsers((prev) => prev.filter((u) => u.id !== userId));
+      toast.success('User Account Removed', 'User account successfully deleted from database.');
+    } catch (err: any) {
+      console.error('Delete user error:', err);
+      toast.error('Database Operation Failed', err.message || 'Could not remove user account.');
     }
   };
 
@@ -1015,6 +1029,7 @@ export const LMSProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         logout,
         switchRole,
         updateUserRole,
+        deleteUser,
         enrollInCourse,
         toggleLessonComplete,
         saveCourse,

@@ -12,12 +12,14 @@ import {
   CheckCircle2,
   Mail,
   Calendar,
+  Trash2,
 } from 'lucide-react';
 
 export default function AdminUsersPage() {
-  const { users, currentUser, updateUserRole, activeRole } = useLMS();
+  const { users, currentUser, updateUserRole, deleteUser, activeRole } = useLMS();
   const [searchTerm, setSearchTerm] = useState('');
   const [roleFilter, setRoleFilter] = useState<string>('ALL');
+  const [userToDelete, setUserToDelete] = useState<{ id: string; name: string } | null>(null);
 
   if (activeRole !== 'Admin') {
     return (
@@ -45,6 +47,12 @@ export default function AdminUsersPage() {
     Student: users.filter((u) => u.role === 'Student').length,
   };
 
+  const handleDeleteConfirm = async () => {
+    if (!userToDelete) return;
+    await deleteUser(userToDelete.id);
+    setUserToDelete(null);
+  };
+
   return (
     <div className="space-y-6 animate-fadeIn">
       {/* Header */}
@@ -55,7 +63,7 @@ export default function AdminUsersPage() {
             <span>User Management & RBAC Permissions</span>
           </h2>
           <p className="text-xs text-slate-400 mt-1">
-            Manage registered accounts, inspect user profiles, and reassign system roles in real-time.
+            Manage registered accounts, inspect user profiles, reassign system roles, and remove accounts.
           </p>
         </div>
       </div>
@@ -170,6 +178,7 @@ export default function AdminUsersPage() {
                 <th className="px-6 py-3.5">Status</th>
                 <th className="px-6 py-3.5">Enrolled Courses</th>
                 <th className="px-6 py-3.5">Assign Role</th>
+                <th className="px-6 py-3.5 text-right">Actions</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-800/60">
@@ -225,12 +234,51 @@ export default function AdminUsersPage() {
                       <option value="Student">Student</option>
                     </select>
                   </td>
+                  <td className="px-6 py-3.5 text-right">
+                    <button
+                      onClick={() => setUserToDelete({ id: user.id, name: user.name })}
+                      disabled={currentUser?.id === user.id}
+                      title={currentUser?.id === user.id ? "Cannot remove current admin" : "Remove user"}
+                      className="p-2 rounded-xl bg-rose-500/10 hover:bg-rose-500/20 disabled:opacity-30 disabled:cursor-not-allowed text-rose-400 border border-rose-500/20 text-xs font-semibold transition-colors"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </button>
+                  </td>
                 </tr>
               ))}
             </tbody>
           </table>
         </div>
       </div>
+
+      {/* Delete User Confirmation Modal */}
+      {userToDelete && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-fadeIn">
+          <div className="bg-[#141d2b] w-full max-w-md rounded-2xl border border-slate-700/80 shadow-2xl p-6 space-y-4">
+            <div className="flex items-center space-x-3 text-rose-400">
+              <Trash2 className="w-6 h-6" />
+              <h3 className="text-lg font-bold text-white">Remove User Account</h3>
+            </div>
+            <p className="text-xs text-slate-300">
+              Are you sure you want to remove <strong className="text-white">{userToDelete.name}</strong> from the database? This action cannot be undone.
+            </p>
+            <div className="flex justify-end space-x-3 pt-2">
+              <button
+                onClick={() => setUserToDelete(null)}
+                className="px-4 py-2 bg-[#1a2436] hover:bg-slate-800 text-slate-300 rounded-xl font-semibold text-xs border border-slate-800"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleDeleteConfirm}
+                className="px-5 py-2 bg-rose-600 hover:bg-rose-700 text-white rounded-xl font-semibold text-xs shadow-md shadow-rose-500/20"
+              >
+                Delete Account
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

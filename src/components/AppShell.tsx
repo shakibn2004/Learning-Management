@@ -15,42 +15,27 @@ export const AppShell: React.FC<{ children: React.ReactNode }> = ({ children }) 
 
   const isLandingPage = pathname === '/';
   const isAuthPage = pathname === '/login' || pathname === '/register';
-  const [isScrolled, setIsScrolled] = React.useState(false);
 
-  React.useEffect(() => {
-    if (!isLandingPage) return;
-    const handleScroll = () => {
-      if (window.scrollY > 40) {
-        setIsScrolled(true);
-      } else {
-        setIsScrolled(false);
-      }
-    };
-    window.addEventListener('scroll', handleScroll, { passive: true });
-    return () => window.removeEventListener('scroll', handleScroll);
-  }, [isLandingPage]);
-
-  // Basic Unauthenticated Route Protection only
+  // Route Protection: send unauthenticated users to login if session & demo persona are absent
   React.useEffect(() => {
     if (isLoading) return;
 
-    // If unauthenticated visitor tries to visit internal dashboard routes, send to login
-    if (!isAuthenticated && !isLandingPage && !isAuthPage) {
+    if (!isAuthenticated && !currentUser?.id && !isLandingPage && !isAuthPage) {
       router.push('/login');
     }
-  }, [isAuthenticated, isLoading, isLandingPage, isAuthPage, router]);
+  }, [isAuthenticated, currentUser, isLoading, isLandingPage, isAuthPage, router]);
 
-  // Standalone Auth Pages (Login & Register have their own full-page luxury UI)
+  // Standalone Auth Pages
   if (isAuthPage) {
     return <>{children}</>;
   }
 
-  // If loading session on protected routes, show smooth dark loader
-  if (!isLandingPage && !isAuthPage && (isLoading || !isAuthenticated)) {
+  // Show dark loader only during initial loading
+  if (!isLandingPage && !isAuthPage && isLoading) {
     return (
       <div className="min-h-screen bg-[#080c14] flex flex-col items-center justify-center space-y-4">
         <div className="w-10 h-10 border-3 border-cyan-400 border-t-transparent rounded-full animate-spin" />
-        <span className="text-xs font-mono text-slate-400">Verifying security session...</span>
+        <span className="text-xs font-mono text-slate-400">Loading portal...</span>
       </div>
     );
   }
