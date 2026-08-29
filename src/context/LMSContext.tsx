@@ -198,32 +198,35 @@ export const LMSProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const [authUser, setAuthUser] = useState<User | null>(null);
   const isAuthenticated = !!authToken && !!authUser;
 
-  // Use Next.js proxy in browser to avoid CORS/IP issues. Use absolute URL in SSR.
+  // Dynamically resolve API URL: direct remote backend in production, /strapi-api proxy on local
+  const rawStrapiUrl = process.env.NEXT_PUBLIC_STRAPI_URL || '';
+  const isRemoteBackend = rawStrapiUrl && !rawStrapiUrl.includes('localhost');
   const API_URL = typeof window !== 'undefined'
-    ? '/strapi-api'
-    : (process.env.NEXT_PUBLIC_STRAPI_URL || 'http://localhost:1337/api');
+    ? (isRemoteBackend
+        ? rawStrapiUrl.replace(/\/+$/, '') + (rawStrapiUrl.endsWith('/api') ? '' : '/api')
+        : '/strapi-api')
+    : (rawStrapiUrl ? rawStrapiUrl.replace(/\/+$/, '') + (rawStrapiUrl.endsWith('/api') ? '' : '/api') : 'http://localhost:1337/api');
 
   // Current active user: preference given to authenticated user, else user from fetched database
   const currentUser: User =
     authUser ||
     users.find((u) => u.role === activeRole) ||
-    users[0] || {
-      id: '',
-      name: 'Guest User',
-      email: '',
-      role: activeRole,
-      avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=200&q=80',
-      enrolledCourseIds: [],
-      createdAt: new Date().toISOString(),
-    };
+    users[0] ||
+    DEFAULT_USERS.find((u) => u.role === activeRole) ||
+    DEFAULT_USERS[0];
 
   const strapiRequest = async (path: string, method = 'GET', body?: any) => {
     try {
       const headers: Record<string, string> = {
         'Content-Type': 'application/json',
       };
-      if (authToken) {
-        headers['Authorization'] = `Bearer ${authToken}`;
+      
+      const effectiveToken =
+        authToken ||
+        (typeof window !== 'undefined' ? localStorage.getItem(AUTH_TOKEN_KEY) : null);
+
+      if (effectiveToken) {
+        headers['Authorization'] = `Bearer ${effectiveToken}`;
       }
       const roleToSend = authUser?.role || currentUser?.role || activeRole || 'Admin';
       headers['x-user-role'] = roleToSend;
@@ -231,11 +234,14 @@ export const LMSProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         headers['x-user-id'] = currentUser.id;
       }
 
-      // If path starts with /api, remove it for the proxy rewrite (/strapi-api -> /api)
+      // If path starts with /api, normalize it
       let cleanPath = path;
-      if (cleanPath.startsWith('/api')) {
+      if (API_URL.endsWith('/api') && cleanPath.startsWith('/api')) {
+        cleanPath = cleanPath.replace(/^\/api/, '');
+      } else if (API_URL === '/strapi-api' && cleanPath.startsWith('/api')) {
         cleanPath = cleanPath.replace(/^\/api/, '');
       }
+
       if (!cleanPath.startsWith('/')) {
         cleanPath = `/${cleanPath}`;
       }
@@ -292,15 +298,31 @@ export const LMSProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         console.warn('Failed to parse cached data', e);
       }
 
-      // Restore session from localStorage if available
+      // Restore session from localStorage & verify with backend /api/lms-users/me
       try {
         const savedToken = localStorage.getItem(AUTH_TOKEN_KEY);
         const savedUser = localStorage.getItem(AUTH_USER_KEY);
-        if (savedToken && savedUser) {
-          const parsedUser: User = JSON.parse(savedUser);
+        if (savedToken) {
           setAuthToken(savedToken);
-          setAuthUser(parsedUser);
-          setActiveRole(parsedUser.role);
+          if (savedUser) {
+            try {
+              const parsedUser: User = JSON.parse(savedUser);
+              setAuthUser(parsedUser);
+              setActiveRole(parsedUser.role);
+            } catch (e) {}
+          }
+
+          // Verify token against backend /api/lms-users/me
+          try {
+            const meRes = await strapiRequest('/api/lms-users/me');
+            if (meRes?.user) {
+              setAuthUser(meRes.user);
+              setActiveRole(meRes.user.role);
+              localStorage.setItem(AUTH_USER_KEY, JSON.stringify(meRes.user));
+            }
+          } catch (verifyErr) {
+            console.warn('Token verification failed on backend:', verifyErr);
+          }
         }
       } catch (e) {
         console.warn('Failed session restore:', e);
@@ -487,6 +509,14 @@ export const LMSProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       localStorage.setItem(AUTH_TOKEN_KEY, data.jwt);
       localStorage.setItem(AUTH_USER_KEY, JSON.stringify(data.user));
 
+      setUsers((prev) => {
+        const exists = prev.some((u) => u.id === data.user.id || u.email === data.user.email);
+        if (exists) {
+          return prev.map((u) => (u.id === data.user.id || u.email === data.user.email ? data.user : u));
+        }
+        return [data.user, ...prev];
+      });
+
       return { success: true, user: data.user };
     } catch (err: any) {
       return { success: false, error: err.message || 'Network error during login' };
@@ -517,8 +547,7 @@ export const LMSProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       localStorage.setItem(AUTH_TOKEN_KEY, data.jwt);
       localStorage.setItem(AUTH_USER_KEY, JSON.stringify(data.user));
 
-      // Append to local users state
-      setUsers((prev) => [data.user, ...prev]);
+      setUsers((prev) => [data.user, ...prev.filter((u) => u.id !== data.user.id && u.email !== data.user.email)]);
 
       return { success: true, user: data.user };
     } catch (err: any) {
