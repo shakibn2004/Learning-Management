@@ -566,35 +566,67 @@ export const LMSProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   };
 
   const getCourseProgress = (userId: string, courseId: string): number => {
-    const course = courses.find((c) => c.id === courseId);
-    if (!course || course.lessons.length === 0) return 0;
+    const course = courses.find(
+      (c) => c.id === courseId || (c as any).documentId === courseId || String(c.id) === String(courseId)
+    );
+    if (!course || !course.lessons || course.lessons.length === 0) return 0;
 
-    const userProg = progress.find((p) => p.userId === userId && p.courseId === courseId);
-    if (!userProg) return 0;
+    const cId = course.id;
+    const cDocId = (course as any).documentId;
 
-    const completedCount = userProg.completedLessonIds.length;
-    return Math.round((completedCount / course.lessons.length) * 100);
+    const userProg = progress.find(
+      (p) =>
+        (String(p.userId) === String(userId) || p.userId === currentUser.email) &&
+        (String(p.courseId) === String(cId) || (cDocId && String(p.courseId) === String(cDocId)))
+    );
+    if (!userProg || !userProg.completedLessonIds) return 0;
+
+    const validCompleted = userProg.completedLessonIds.filter((lid) =>
+      course.lessons.some((l) => l.id === lid || (l as any).documentId === lid)
+    );
+
+    return Math.min(100, Math.round((validCompleted.length / course.lessons.length) * 100));
   };
 
   const isLessonCompleted = (userId: string, courseId: string, lessonId: string): boolean => {
-    const userProg = progress.find((p) => p.userId === userId && p.courseId === courseId);
-    return userProg ? userProg.completedLessonIds.includes(lessonId) : false;
+    const course = courses.find(
+      (c) => c.id === courseId || (c as any).documentId === courseId || String(c.id) === String(courseId)
+    );
+    const cId = course?.id || courseId;
+    const cDocId = (course as any)?.documentId;
+
+    const userProg = progress.find(
+      (p) =>
+        (String(p.userId) === String(userId) || p.userId === currentUser.email) &&
+        (String(p.courseId) === String(cId) || (cDocId && String(p.courseId) === String(cDocId)))
+    );
+    if (!userProg || !userProg.completedLessonIds) return false;
+    return userProg.completedLessonIds.some((lid) => lid === lessonId || String(lid) === String(lessonId));
   };
 
   const toggleLessonComplete = async (courseId: string, lessonId: string) => {
     if (!currentUser) return;
     try {
+      const course = courses.find(
+        (c) => c.id === courseId || (c as any).documentId === courseId || String(c.id) === String(courseId)
+      );
+      const cId = course?.id || courseId;
+      const cDocId = (course as any)?.documentId;
+
       const existingIndex = progress.findIndex(
-        (p) => p.userId === currentUser.id && p.courseId === courseId
+        (p) =>
+          (String(p.userId) === String(currentUser.id) || p.userId === currentUser.email) &&
+          (String(p.courseId) === String(cId) || (cDocId && String(p.courseId) === String(cDocId)))
       );
 
       let res;
       let newCompleted: string[] = [];
+      let wasCompleted = false;
 
       if (existingIndex > -1) {
         const item = progress[existingIndex];
-        const isComp = item.completedLessonIds.includes(lessonId);
-        newCompleted = isComp
+        wasCompleted = item.completedLessonIds.includes(lessonId);
+        newCompleted = wasCompleted
           ? item.completedLessonIds.filter((id) => id !== lessonId)
           : [...item.completedLessonIds, lessonId];
 
@@ -611,7 +643,7 @@ export const LMSProvider: React.FC<{ children: React.ReactNode }> = ({ children 
           res = await strapiRequest('/api/user-course-progresses', 'POST', {
             data: {
               userId: currentUser.id,
-              courseId,
+              courseId: cId,
               completedLessonIds: newCompleted,
               lastAccessedLessonId: lessonId,
             },
@@ -622,7 +654,7 @@ export const LMSProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         res = await strapiRequest('/api/user-course-progresses', 'POST', {
           data: {
             userId: currentUser.id,
-            courseId,
+            courseId: cId,
             completedLessonIds: newCompleted,
             lastAccessedLessonId: lessonId,
           },
@@ -633,12 +665,14 @@ export const LMSProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         const returnedProg = res.data;
         setProgress((prev) => {
           const idx = prev.findIndex(
-            (p) => p.userId === currentUser.id && p.courseId === courseId
+            (p) =>
+              (String(p.userId) === String(currentUser.id) || p.userId === currentUser.email) &&
+              (String(p.courseId) === String(cId) || (cDocId && String(p.courseId) === String(cDocId)))
           );
           const updatedItem = {
             id: returnedProg.documentId || String(returnedProg.id),
             userId: currentUser.id,
-            courseId,
+            courseId: cId,
             completedLessonIds: newCompleted,
             lastAccessedLessonId: lessonId,
             updatedAt: returnedProg.updatedAt || new Date().toISOString(),
@@ -651,6 +685,12 @@ export const LMSProvider: React.FC<{ children: React.ReactNode }> = ({ children 
             return [...prev, updatedItem];
           }
         });
+
+        if (wasCompleted) {
+          toast.info('Lesson Incomplete', 'Lesson marked as uncompleted.');
+        } else {
+          toast.success('Lesson Completed! 🎉', `Progress updated for "${course?.title || 'course'}".`);
+        }
       }
     } catch (err) {
       toast.error('Progress Update Error', `${err instanceof Error ? err.message : String(err)}`);

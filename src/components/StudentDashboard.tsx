@@ -223,6 +223,15 @@ export const StudentDashboard: React.FC<StudentDashboardProps> = ({ activeTab: p
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               {enrolledCourses.map((course) => {
                 const progressPct = getCourseProgress(currentUser.id, course.id);
+                const courseProg = progress.find(
+                  (p) =>
+                    (String(p.userId) === String(currentUser.id) || p.userId === currentUser.email) &&
+                    (String(p.courseId) === String(course.id) || (course as any).documentId === p.courseId)
+                );
+                const totalLessons = course.lessons?.length || 0;
+                const completedLessonsCount = (course.lessons || []).filter((l) =>
+                  courseProg?.completedLessonIds?.includes(l.id)
+                ).length;
 
                 return (
                   <div
@@ -235,22 +244,26 @@ export const StudentDashboard: React.FC<StudentDashboardProps> = ({ activeTab: p
                           {course.category}
                         </span>
                         <span className="text-xs font-bold text-slate-300">
-                          {course.lessons?.length || 0} Lessons
+                          {totalLessons} Lessons
                         </span>
                       </div>
 
                       <h3 className="text-base font-bold text-white">{course.title}</h3>
                       <p className="text-xs text-slate-400 line-clamp-2">{course.description}</p>
 
-                      {/* Progress Bar */}
-                      <div className="space-y-1.5 pt-2">
+                      {/* Progress Bar & Exact Ratio */}
+                      <div className="space-y-2 pt-2">
                         <div className="flex items-center justify-between text-xs">
-                          <span className="text-slate-400">Course Completion</span>
-                          <span className="font-bold text-white">{progressPct}%</span>
+                          <span className="text-slate-400 font-medium">Progress</span>
+                          <span className="font-bold text-[#60a5fa]">
+                            {totalLessons > 0 ? `${completedLessonsCount} of ${totalLessons} lessons done (${progressPct}%)` : '0 lessons'}
+                          </span>
                         </div>
                         <div className="w-full bg-[#1a2436] h-2.5 rounded-full overflow-hidden border border-slate-800">
                           <div
-                            className="bg-[#3b82f6] h-full transition-all duration-500"
+                            className={`h-full transition-all duration-500 rounded-full ${
+                              progressPct === 100 ? 'bg-[#10b981]' : 'bg-[#3b82f6]'
+                            }`}
                             style={{ width: `${progressPct}%` }}
                           ></div>
                         </div>

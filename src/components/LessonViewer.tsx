@@ -11,6 +11,7 @@ import {
   ChevronLeft,
   ChevronRight,
   Award,
+  BookOpen,
 } from 'lucide-react';
 
 interface LessonViewerProps {
@@ -37,6 +38,10 @@ export const LessonViewer: React.FC<LessonViewerProps> = ({
   const currentLesson = lessons[currentLessonIndex] || lessons[0];
 
   const progressPct = getCourseProgress(currentUser.id, course.id);
+  const completedLessonsCount = lessons.filter((l) =>
+    isLessonCompleted(currentUser.id, course.id, l.id)
+  ).length;
+
   const isCurrentCompleted = currentLesson
     ? isLessonCompleted(currentUser.id, course.id, currentLesson.id)
     : false;
@@ -54,13 +59,13 @@ export const LessonViewer: React.FC<LessonViewerProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-6 bg-black/90 backdrop-blur-xl animate-fadeIn overflow-hidden">
-      <div className="bg-[#141d2b] w-full max-w-6xl h-[94vh] rounded-2xl border border-slate-700/80 shadow-2xl flex flex-col overflow-hidden">
-        {/* Top Bar */}
-        <div className="px-4 sm:px-6 py-3 border-b border-slate-800 flex items-center justify-between bg-[#0f172a] shrink-0">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-4 bg-black/90 backdrop-blur-md animate-fadeIn">
+      <div className="bg-[#141d2b] w-full max-w-6xl h-[92vh] rounded-2xl border border-slate-800 shadow-2xl flex flex-col overflow-hidden">
+        {/* Top Header Bar */}
+        <div className="flex items-center justify-between px-4 sm:px-6 py-3 border-b border-slate-800 bg-[#0f172a]/95 z-10">
           <div className="flex items-center space-x-3 overflow-hidden">
             <div className="w-8 h-8 rounded-lg bg-[#3b82f6]/15 border border-[#3b82f6]/30 flex items-center justify-center text-[#60a5fa] shrink-0">
-              <PlayCircle className="w-4 h-4" />
+              <BookOpen className="w-4 h-4" />
             </div>
             <div className="truncate">
               <h3 className="text-xs sm:text-sm font-bold text-white truncate">{course.title}</h3>
@@ -74,11 +79,15 @@ export const LessonViewer: React.FC<LessonViewerProps> = ({
             <div className="hidden md:flex items-center space-x-3">
               <div className="w-32 bg-[#1a2436] h-2 rounded-full overflow-hidden border border-slate-800">
                 <div
-                  className="bg-[#3b82f6] h-full transition-all duration-300"
+                  className={`h-full transition-all duration-300 ${
+                    progressPct === 100 ? 'bg-[#10b981]' : 'bg-[#3b82f6]'
+                  }`}
                   style={{ width: `${progressPct}%` }}
                 ></div>
               </div>
-              <span className="text-xs font-bold text-[#60a5fa]">{progressPct}% Complete</span>
+              <span className="text-xs font-bold text-[#60a5fa]">
+                {completedLessonsCount} of {lessons.length} done ({progressPct}%)
+              </span>
             </div>
 
             {course.quiz && (
@@ -108,9 +117,8 @@ export const LessonViewer: React.FC<LessonViewerProps> = ({
               <span className="text-[11px] font-bold uppercase tracking-wider text-slate-400">
                 Course Syllabus
               </span>
-              <span className="text-[11px] font-mono text-[#60a5fa] font-semibold">
-                {lessons.filter((l) => isLessonCompleted(currentUser.id, course.id, l.id)).length}/
-                {lessons.length} Done
+              <span className="text-[10px] font-mono text-[#60a5fa]">
+                {completedLessonsCount}/{lessons.length} Done
               </span>
             </div>
 
