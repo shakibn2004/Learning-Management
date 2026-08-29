@@ -5,6 +5,7 @@ import { useLMS } from '../context/LMSContext';
 import { UserRole } from '../types';
 import { PlatformAnalyticsCharts } from './PlatformAnalyticsCharts';
 import { DashboardFinancialsAndActivity } from './DashboardFinancialsAndActivity';
+import { CourseModal } from './CourseModal';
 import {
   Users,
   BookOpen,
@@ -13,12 +14,14 @@ import {
   Search,
   TrendingUp,
   ShieldCheck,
+  Plus,
 } from 'lucide-react';
 
 export const AdminDashboard: React.FC = () => {
-  const { users, courses, currentUser, updateUserRole, activeRole } = useLMS();
+  const { users, courses, currentUser, updateUserRole, activeRole, canPerformAction } = useLMS();
   const [searchTerm, setSearchTerm] = useState('');
   const [roleFilter, setRoleFilter] = useState<string>('ALL');
+  const [showCourseModal, setShowCourseModal] = useState(false);
 
   if (activeRole !== 'Admin') {
     return (
@@ -60,11 +63,21 @@ export const AdminDashboard: React.FC = () => {
   return (
     <div className="space-y-6 animate-fadeIn">
       {/* Header Title Bar */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-2">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-2">
         <div>
           <h2 className="text-2xl font-extrabold text-white tracking-tight">Dashboard Overview</h2>
           <p className="text-xs text-slate-400 mt-0.5">Welcome back, {currentUser.name}</p>
         </div>
+
+        {canPerformAction('create_course') && (
+          <button
+            onClick={() => setShowCourseModal(true)}
+            className="flex items-center space-x-2 px-4 py-2.5 bg-[#3b82f6] hover:bg-blue-600 text-white rounded-xl text-xs font-bold shadow-md shadow-blue-500/20 shrink-0"
+          >
+            <Plus className="w-4 h-4" />
+            <span>+ Create New Course</span>
+          </button>
+        )}
       </div>
 
       {/* 1. TOP 4 STAT CARDS GRID */}
@@ -133,6 +146,9 @@ export const AdminDashboard: React.FC = () => {
 
       {/* 3. REVENUE BREAKDOWN & LIVE AUDIT ACTIVITY FEED */}
       <DashboardFinancialsAndActivity />
+
+      {/* Course Modal */}
+      {showCourseModal && <CourseModal onClose={() => setShowCourseModal(false)} />}
     </div>
   );
 };

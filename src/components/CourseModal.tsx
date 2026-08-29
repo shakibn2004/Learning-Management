@@ -27,9 +27,11 @@ export const CourseModal: React.FC<CourseModalProps> = ({ courseToEdit, onClose 
   const [price, setPrice] = useState(courseToEdit?.price || 49.99);
   const [published, setPublished] = useState(courseToEdit ? courseToEdit.published : true);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!title.trim() || !description.trim()) return;
+    if (!title.trim() || !description.trim() || isSubmitting) return;
 
     const courseData: Course = {
       id: courseToEdit?.id || `course-${Date.now()}`,
@@ -48,8 +50,15 @@ export const CourseModal: React.FC<CourseModalProps> = ({ courseToEdit, onClose 
       createdAt: courseToEdit?.createdAt || new Date().toISOString(),
     };
 
-    saveCourse(courseData);
-    onClose();
+    setIsSubmitting(true);
+    try {
+      await saveCourse(courseData);
+      onClose();
+    } catch (err) {
+      console.error('Save course failed:', err);
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
@@ -177,9 +186,17 @@ export const CourseModal: React.FC<CourseModalProps> = ({ courseToEdit, onClose 
             </button>
             <button
               type="submit"
-              className="px-5 py-2 bg-[#3b82f6] hover:bg-blue-600 text-white rounded-xl font-semibold text-xs shadow-md shadow-blue-500/20"
+              disabled={isSubmitting}
+              className="px-5 py-2 bg-[#3b82f6] hover:bg-blue-600 disabled:opacity-50 text-white rounded-xl font-semibold text-xs shadow-md shadow-blue-500/20 flex items-center space-x-2"
             >
-              {courseToEdit ? 'Save Changes' : 'Create Course'}
+              {isSubmitting ? (
+                <>
+                  <div className="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                  <span>Posting to Database...</span>
+                </>
+              ) : (
+                <span>{courseToEdit ? 'Save Changes' : 'Create Course'}</span>
+              )}
             </button>
           </div>
         </form>
