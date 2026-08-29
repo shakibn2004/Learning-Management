@@ -43,7 +43,7 @@ export const StudentDashboard: React.FC<StudentDashboardProps> = ({ activeTab, s
     });
   };
 
-  const availableCourses = courses.filter((c) => c.published);
+  const availableCourses = courses.filter((c) => c.published !== false);
 
   const enrolledCourses = availableCourses.filter((c) => isCourseEnrolled(c));
 
@@ -77,7 +77,7 @@ export const StudentDashboard: React.FC<StudentDashboardProps> = ({ activeTab, s
 
   return (
     <div className="space-y-6 animate-fadeIn">
-      {/* Header Title Bar matching 1st reference image */}
+      {/* Header Title Bar & View Selector Tabs */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-2">
         <div>
           <h2 className="text-2xl font-extrabold text-white tracking-tight">
@@ -90,23 +90,31 @@ export const StudentDashboard: React.FC<StudentDashboardProps> = ({ activeTab, s
           </p>
         </div>
 
-        {activeTab === 'my-courses' ? (
-          <button
-            onClick={() => setActiveTab('courses')}
-            className="flex items-center space-x-2 px-4 py-2.5 bg-[#3b82f6] hover:bg-blue-600 text-white rounded-xl text-xs font-bold shadow-md shadow-blue-500/20 shrink-0"
-          >
-            <BookOpen className="w-4 h-4" />
-            <span>Discover Courses</span>
-          </button>
-        ) : (
+        <div className="flex items-center space-x-2 bg-[#141d2b] p-1.5 rounded-2xl border border-slate-800 shrink-0">
           <button
             onClick={() => setActiveTab('my-courses')}
-            className="flex items-center space-x-2 px-4 py-2.5 bg-[#3b82f6] hover:bg-blue-600 text-white rounded-xl text-xs font-bold shadow-md shadow-blue-500/20 shrink-0"
+            className={`flex items-center space-x-2 px-3.5 py-2 rounded-xl text-xs font-bold transition-all ${
+              activeTab === 'my-courses'
+                ? 'bg-[#3b82f6] text-white shadow-md shadow-blue-500/20'
+                : 'text-slate-400 hover:text-white hover:bg-[#1a2436]'
+            }`}
           >
             <GraduationCap className="w-4 h-4" />
             <span>My Courses ({enrolledCourses.length})</span>
           </button>
-        )}
+
+          <button
+            onClick={() => setActiveTab('courses')}
+            className={`flex items-center space-x-2 px-3.5 py-2 rounded-xl text-xs font-bold transition-all ${
+              activeTab === 'courses'
+                ? 'bg-[#3b82f6] text-white shadow-md shadow-blue-500/20'
+                : 'text-slate-400 hover:text-white hover:bg-[#1a2436]'
+            }`}
+          >
+            <BookOpen className="w-4 h-4" />
+            <span>All Catalog ({availableCourses.length})</span>
+          </button>
+        </div>
       </div>
 
       {/* TOP 4 STAT CARDS GRID (Unified with Admin) */}
