@@ -20,9 +20,15 @@ export const QuizModal: React.FC<QuizModalProps> = ({ quiz, onClose }) => {
   const [submittedAttempt, setSubmittedAttempt] = useState<QuizAttempt | null>(null);
   const [isRetaking, setIsRetaking] = useState(false);
 
-  const previousAttempt = quizAttempts.find(
-    (qa) => qa.quizId === quiz.id && qa.studentId === currentUser.id
-  );
+  const previousAttempt = quizAttempts
+    .filter(
+      (qa) =>
+        qa.quizId === quiz.id &&
+        (String(qa.studentId) === String(currentUser.id) || qa.studentId === currentUser.email)
+    )
+    .sort(
+      (a, b) => new Date(b.completedAt || 0).getTime() - new Date(a.completedAt || 0).getTime()
+    )[0];
 
   // When retaking, show fresh blank quiz until submitted
   const activeResult = isRetaking ? submittedAttempt : (submittedAttempt || previousAttempt);

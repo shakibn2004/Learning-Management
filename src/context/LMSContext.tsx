@@ -363,7 +363,9 @@ export const LMSProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         // Fetch Quiz Attempts
         (async () => {
           try {
-            const attemptsRes = await strapiRequest('/api/quiz-attempts?pagination[pageSize]=100');
+            const attemptsRes = await strapiRequest(
+              '/api/quiz-attempts?sort[0]=completedAt:desc&sort[1]=createdAt:desc&pagination[pageSize]=100'
+            );
             if (attemptsRes?.data) {
               const mappedAttempts = attemptsRes.data.map((a: any) => ({
                 id: a.documentId || String(a.id),
@@ -372,8 +374,12 @@ export const LMSProvider: React.FC<{ children: React.ReactNode }> = ({ children 
                 scorePercentage: Number(a.scorePercentage) || 0,
                 passed: a.passed,
                 answers: a.answers || {},
-                completedAt: a.completedAt,
+                completedAt: a.completedAt || a.createdAt || new Date().toISOString(),
               }));
+              mappedAttempts.sort(
+                (a: any, b: any) =>
+                  new Date(b.completedAt || 0).getTime() - new Date(a.completedAt || 0).getTime()
+              );
               setQuizAttempts(mappedAttempts);
             }
           } catch (err) {
@@ -956,7 +962,13 @@ export const LMSProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     const passingScore = foundQuiz ? foundQuiz.passingScore : 70;
     const passed = scorePercentage >= passingScore;
 
-    const attemptId = `attempt-${Date.now()}`;
+    const existingAttempt = quizAttempts.find(
+      (qa) =>
+        qa.quizId === quizId &&
+        (String(qa.studentId) === String(currentUser.id) || qa.studentId === currentUser.email)
+    );
+
+    const attemptId = existingAttempt?.id || `attempt-${Date.now()}`;
     const attempt: QuizAttempt = {
       id: attemptId,
       quizId,
@@ -967,25 +979,49 @@ export const LMSProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       completedAt: new Date().toISOString(),
     };
 
-    strapiRequest('/api/quiz-attempts', 'POST', {
-      data: {
-        quizId,
-        studentId: currentUser.id,
-        scorePercentage,
-        passed,
-        answers,
-        completedAt: attempt.completedAt,
-      },
-    })
+    // Optimistically update local state immediately so UI updates with new answers
+    setQuizAttempts((prev) => [
+      attempt,
+      ...prev.filter(
+        (qa) =>
+          qa.id !== attemptId &&
+          !(qa.quizId === quizId && (String(qa.studentId) === String(currentUser.id) || qa.studentId === currentUser.email))
+      ),
+    ]);
+
+    const savePromise = existingAttempt?.id
+      ? strapiRequest(`/api/quiz-attempts/${existingAttempt.id}`, 'PUT', {
+          data: {
+            scorePercentage,
+            passed,
+            answers,
+            completedAt: attempt.completedAt,
+          },
+        })
+      : strapiRequest('/api/quiz-attempts', 'POST', {
+          data: {
+            quizId,
+            studentId: currentUser.id,
+            scorePercentage,
+            passed,
+            answers,
+            completedAt: attempt.completedAt,
+          },
+        });
+
+    savePromise
       .then((res) => {
         if (res?.data) {
           const returnedAttempt = res.data;
+          const finalId = returnedAttempt.documentId || String(returnedAttempt.id);
           setQuizAttempts((prev) => [
-            {
-              ...attempt,
-              id: returnedAttempt.documentId || String(returnedAttempt.id),
-            },
-            ...prev.filter((qa) => qa.id !== attemptId),
+            { ...attempt, id: finalId },
+            ...prev.filter(
+              (qa) =>
+                qa.id !== attemptId &&
+                qa.id !== finalId &&
+                !(qa.quizId === quizId && (String(qa.studentId) === String(currentUser.id) || qa.studentId === currentUser.email))
+            ),
           ]);
         }
       })
@@ -993,7 +1029,6 @@ export const LMSProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         console.error('Failed to save quiz attempt to Strapi:', err);
       });
 
-    setQuizAttempts((prev) => [attempt, ...prev]);
     if (passed) {
       toast.success('Quiz Passed! 🎉', `You scored ${scorePercentage}%.`);
     } else {
