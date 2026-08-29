@@ -33,19 +33,31 @@ export const StudentDashboard: React.FC<StudentDashboardProps> = ({ activeTab, s
   const [activeCourseForLessons, setActiveCourseForLessons] = useState<Course | null>(null);
   const [activeCourseForQuiz, setActiveCourseForQuiz] = useState<Course | null>(null);
 
+  const isCourseEnrolled = (course: Course) => {
+    if (!currentUser?.enrolledCourseIds) return false;
+    return currentUser.enrolledCourseIds.some((eId: any) => {
+      const sEId = String(eId);
+      const sCId = String(course.id);
+      const sDocId = String((course as any).documentId || '');
+      return sEId === sCId || (sDocId && sEId === sDocId);
+    });
+  };
+
   const availableCourses = courses.filter((c) => c.published);
 
-  const enrolledCourses = availableCourses.filter((c) =>
-    currentUser.enrolledCourseIds?.includes(c.id)
-  );
+  const enrolledCourses = availableCourses.filter((c) => isCourseEnrolled(c));
 
-  const studentProgress = progress.filter((p) => p.userId === currentUser.id);
+  const studentProgress = progress.filter(
+    (p) => String(p.userId) === String(currentUser.id) || p.userId === currentUser.email
+  );
   const totalCompletedLessons = studentProgress.reduce(
     (sum, p) => sum + (p.completedLessonIds?.length || 0),
     0
   );
 
-  const studentAttempts = quizAttempts.filter((qa) => qa.studentId === currentUser.id);
+  const studentAttempts = quizAttempts.filter(
+    (qa) => String(qa.studentId) === String(currentUser.id)
+  );
   const passedQuizzesCount = studentAttempts.filter((qa) => qa.passed).length;
   const avgQuizScore =
     studentAttempts.length > 0
@@ -266,7 +278,7 @@ export const StudentDashboard: React.FC<StudentDashboardProps> = ({ activeTab, s
           {/* Courses Grid */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {filteredCourses.map((course) => {
-              const isEnrolled = currentUser.enrolledCourseIds?.includes(course.id);
+              const isEnrolled = isCourseEnrolled(course);
 
               return (
                 <div

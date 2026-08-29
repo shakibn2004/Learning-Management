@@ -146,7 +146,7 @@ export const LMSProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     const initData = async () => {
       setIsLoading(true);
 
-      // 0. Pre-load cached courses from localStorage if available
+      // 0. Pre-load cached courses, progress & attempts from localStorage if available
       try {
         const cached = localStorage.getItem(COURSES_CACHE_KEY);
         if (cached) {
@@ -155,8 +155,22 @@ export const LMSProvider: React.FC<{ children: React.ReactNode }> = ({ children 
             setCourses(parsed);
           }
         }
+        const cachedProg = localStorage.getItem('lms_cached_progress_v2');
+        if (cachedProg) {
+          const parsedProg = JSON.parse(cachedProg);
+          if (Array.isArray(parsedProg) && parsedProg.length > 0) {
+            setProgress(parsedProg);
+          }
+        }
+        const cachedAttempts = localStorage.getItem('lms_cached_attempts_v2');
+        if (cachedAttempts) {
+          const parsedAttempts = JSON.parse(cachedAttempts);
+          if (Array.isArray(parsedAttempts) && parsedAttempts.length > 0) {
+            setQuizAttempts(parsedAttempts);
+          }
+        }
       } catch (e) {
-        console.warn('Failed to parse cached courses', e);
+        console.warn('Failed to parse cached data', e);
       }
 
       // Restore session from localStorage if available
@@ -243,18 +257,20 @@ export const LMSProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
       // 3. Fetch progress (isolated try)
       try {
-        const progRes = await strapiRequest('/api/user-course-progresses');
+        const progRes = await strapiRequest('/api/user-course-progresses?pagination[pageSize]=100');
         if (progRes?.data) {
-          setProgress(
-            progRes.data.map((p: any) => ({
-              id: p.documentId || String(p.id),
-              userId: p.userId,
-              courseId: p.courseId,
-              completedLessonIds: p.completedLessonIds || [],
-              lastAccessedLessonId: p.lastAccessedLessonId,
-              updatedAt: p.updatedAt || new Date().toISOString(),
-            }))
-          );
+          const mappedProg = progRes.data.map((p: any) => ({
+            id: p.documentId || String(p.id),
+            userId: p.userId,
+            courseId: p.courseId,
+            completedLessonIds: p.completedLessonIds || [],
+            lastAccessedLessonId: p.lastAccessedLessonId,
+            updatedAt: p.updatedAt || new Date().toISOString(),
+          }));
+          setProgress(mappedProg);
+          try {
+            localStorage.setItem('lms_cached_progress_v2', JSON.stringify(mappedProg));
+          } catch (e) {}
         }
       } catch (err) {
         console.warn('Progress fetch failed:', err);
@@ -262,7 +278,7 @@ export const LMSProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
       // 4. Fetch blogs (isolated try)
       try {
-        const blogsRes = await strapiRequest('/api/blog-posts');
+        const blogsRes = await strapiRequest('/api/blog-posts?pagination[pageSize]=100');
         if (blogsRes?.data) {
           setBlogPosts(
             blogsRes.data.map((b: any) => ({
@@ -287,19 +303,21 @@ export const LMSProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
       // 5. Fetch quiz attempts (isolated try)
       try {
-        const attemptsRes = await strapiRequest('/api/quiz-attempts');
+        const attemptsRes = await strapiRequest('/api/quiz-attempts?pagination[pageSize]=100');
         if (attemptsRes?.data) {
-          setQuizAttempts(
-            attemptsRes.data.map((a: any) => ({
-              id: a.documentId || String(a.id),
-              quizId: a.quizId,
-              studentId: a.studentId,
-              scorePercentage: Number(a.scorePercentage) || 0,
-              passed: a.passed,
-              answers: a.answers || {},
-              completedAt: a.completedAt,
-            }))
-          );
+          const mappedAttempts = attemptsRes.data.map((a: any) => ({
+            id: a.documentId || String(a.id),
+            quizId: a.quizId,
+            studentId: a.studentId,
+            scorePercentage: Number(a.scorePercentage) || 0,
+            passed: a.passed,
+            answers: a.answers || {},
+            completedAt: a.completedAt,
+          }));
+          setQuizAttempts(mappedAttempts);
+          try {
+            localStorage.setItem('lms_cached_attempts_v2', JSON.stringify(mappedAttempts));
+          } catch (e) {}
         }
       } catch (err) {
         console.warn('Quiz attempts fetch failed:', err);
@@ -597,10 +615,18 @@ export const LMSProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
   const saveCourse = async (courseData: Course) => {
     try {
-      const isEdit = courses.some((c) => c.id === courseData.id);
+      const existingCourse = courses.find(
+        (c) =>
+          c.id === courseData.id ||
+          String(c.id) === String(courseData.id) ||
+          (c as any).documentId === courseData.id
+      );
+
+      const isEdit = !!existingCourse;
       let res;
-      if (isEdit) {
-        res = await strapiRequest(`/api/courses/${courseData.id}`, 'PUT', {
+      if (isEdit && existingCourse) {
+        const updateEndpointId = (existingCourse as any).documentId || existingCourse.id || courseData.id;
+        res = await strapiRequest(`/api/courses/${updateEndpointId}`, 'PUT', {
           data: {
             title: courseData.title,
             subtitle: courseData.subtitle,
@@ -633,25 +659,57 @@ export const LMSProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
       if (res?.data) {
         const returnedCourse = res.data;
-        const newCourse: Course = {
-          ...courseData,
-          id: returnedCourse.documentId || String(returnedCourse.id),
-          createdAt: returnedCourse.createdAt || courseData.createdAt,
-        };
+        const targetId = returnedCourse.documentId || String(returnedCourse.id);
+
         setCourses((prev) => {
-          const idx = prev.findIndex((c) => c.id === newCourse.id);
+          const matchIdx = prev.findIndex(
+            (c) =>
+              c.id === targetId ||
+              c.id === courseData.id ||
+              String(c.id) === String(courseData.id) ||
+              String(c.id) === String(returnedCourse.id) ||
+              (c as any).documentId === targetId
+          );
+
           let updated: Course[];
-          if (idx > -1) {
-            updated = [...prev];
-            updated[idx] = newCourse;
+          if (matchIdx > -1) {
+            updated = prev.map((c, i) => {
+              if (i === matchIdx) {
+                return {
+                  ...c,
+                  ...courseData,
+                  id: c.id, // Preserve original ID so enrolledCourseIds mapping stays 100% stable
+                  title: returnedCourse.title || courseData.title,
+                  subtitle: returnedCourse.subtitle || courseData.subtitle,
+                  description: returnedCourse.description || courseData.description,
+                  category: returnedCourse.category || courseData.category,
+                  level: returnedCourse.level || courseData.level,
+                  coverImage: returnedCourse.coverImage || courseData.coverImage,
+                  instructorId: returnedCourse.instructorId || courseData.instructorId,
+                  instructorName: returnedCourse.instructorName || courseData.instructorName,
+                  price: Number(returnedCourse.price) || courseData.price,
+                  published: returnedCourse.published !== undefined ? returnedCourse.published : courseData.published,
+                  lessons: courseData.lessons?.length ? courseData.lessons : (c.lessons || []),
+                  quiz: courseData.quiz || c.quiz,
+                };
+              }
+              return c;
+            });
           } else {
+            const newCourse: Course = {
+              ...courseData,
+              id: targetId,
+              createdAt: returnedCourse.createdAt || courseData.createdAt,
+            };
             updated = [newCourse, ...prev];
           }
+
           try {
             localStorage.setItem(COURSES_CACHE_KEY, JSON.stringify(updated));
           } catch (e) {}
           return updated;
         });
+
         toast.success('Course Saved', `"${courseData.title}" was successfully saved.`);
       }
     } catch (err) {
