@@ -229,39 +229,59 @@ export const LMSProvider: React.FC<{ children: React.ReactNode }> = ({ children 
               }
             }
 
+            // Also fetch all quizzes directly from backend
+            let quizzesRes: any;
+            try {
+              quizzesRes = await strapiRequest('/api/quizzes?pagination[pageSize]=100');
+            } catch (qErr) {
+              console.warn('Quizzes fetch error:', qErr);
+            }
+            const allQuizzes: any[] = quizzesRes?.data || [];
+
             if (coursesRes?.data) {
-              const mapped: Course[] = coursesRes.data.map((c: any) => ({
-                id: c.documentId || String(c.id),
-                title: c.title || '',
-                subtitle: c.subtitle || '',
-                description: c.description || '',
-                category: c.category || 'Web Development',
-                level: c.level || 'Intermediate',
-                coverImage: c.coverImage || 'https://images.unsplash.com/photo-1516321318423-f06f85e504b3?auto=format&fit=crop&w=800&q=80',
-                instructorId: c.instructorId || '',
-                instructorName: c.instructorName || '',
-                price: Number(c.price) || 0,
-                published: c.published !== undefined ? c.published : true,
-                lessons: (c.lessons || []).map((l: any) => ({
-                  id: l.documentId || String(l.id),
-                  courseId: c.documentId || String(c.id),
-                  title: l.title,
-                  durationMinutes: Number(l.durationMinutes) || 0,
-                  type: l.type,
-                  videoUrl: l.videoUrl,
-                  content: l.content,
-                  order: Number(l.order) || 1,
-                })).sort((a: any, b: any) => a.order - b.order),
-                quiz: c.quiz ? {
-                  id: c.quiz.documentId || String(c.quiz.id),
-                  courseId: c.documentId || String(c.id),
-                  title: c.quiz.title,
-                  description: c.quiz.description,
-                  passingScore: Number(c.quiz.passingScore) || 70,
-                  questions: c.quiz.questions || [],
-                } : undefined,
-                createdAt: c.createdAt || new Date().toISOString(),
-              }));
+              const mapped: Course[] = coursesRes.data.map((c: any) => {
+                const cId = c.documentId || String(c.id);
+                const matchedQuiz = c.quiz || allQuizzes.find((q: any) =>
+                  q.courseId === cId ||
+                  q.courseId === c.documentId ||
+                  q.courseId === String(c.id) ||
+                  (q.documentId === 'quiz-c1' && (cId === 'course-1' || c.title?.includes('Next.js'))) ||
+                  (q.documentId === 'quiz-c2' && (cId === 'course-2' || c.title?.includes('UI/UX')))
+                );
+
+                return {
+                  id: cId,
+                  title: c.title || '',
+                  subtitle: c.subtitle || '',
+                  description: c.description || '',
+                  category: c.category || 'Web Development',
+                  level: c.level || 'Intermediate',
+                  coverImage: c.coverImage || 'https://images.unsplash.com/photo-1516321318423-f06f85e504b3?auto=format&fit=crop&w=800&q=80',
+                  instructorId: c.instructorId || '',
+                  instructorName: c.instructorName || '',
+                  price: Number(c.price) || 0,
+                  published: c.published !== undefined ? c.published : true,
+                  lessons: (c.lessons || []).map((l: any) => ({
+                    id: l.documentId || String(l.id),
+                    courseId: cId,
+                    title: l.title,
+                    durationMinutes: Number(l.durationMinutes) || 0,
+                    type: l.type,
+                    videoUrl: l.videoUrl,
+                    content: l.content,
+                    order: Number(l.order) || 1,
+                  })).sort((a: any, b: any) => a.order - b.order),
+                  quiz: matchedQuiz ? {
+                    id: matchedQuiz.documentId || String(matchedQuiz.id),
+                    courseId: cId,
+                    title: matchedQuiz.title,
+                    description: matchedQuiz.description,
+                    passingScore: Number(matchedQuiz.passingScore) || 70,
+                    questions: matchedQuiz.questions || [],
+                  } : undefined,
+                  createdAt: c.createdAt || new Date().toISOString(),
+                };
+              });
               setCourses(mapped);
             }
           } catch (err) {
@@ -808,13 +828,14 @@ export const LMSProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       const course = courses.find((c) => c.id === courseId);
       const hasQuiz = !!course?.quiz;
       let res;
-      if (hasQuiz) {
+      if (hasQuiz && quizData.id) {
         res = await strapiRequest(`/api/quizzes/${quizData.id}`, 'PUT', {
           data: {
             title: quizData.title,
             description: quizData.description,
             passingScore: quizData.passingScore,
             questions: quizData.questions,
+            courseId: courseId,
           },
         });
       } else {
@@ -824,7 +845,7 @@ export const LMSProvider: React.FC<{ children: React.ReactNode }> = ({ children 
             description: quizData.description,
             passingScore: quizData.passingScore,
             questions: quizData.questions,
-            course: courseId,
+            courseId: courseId,
           },
         });
       }
