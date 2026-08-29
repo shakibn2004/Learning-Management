@@ -64,10 +64,129 @@ const AUTH_TOKEN_KEY = 'lms_auth_token';
 const AUTH_USER_KEY = 'lms_auth_user';
 const COURSES_CACHE_KEY = 'lms_cached_courses_v2';
 
+const DEFAULT_USERS: User[] = [
+  {
+    id: 'user-admin-1',
+    name: 'Admin User',
+    email: 'admin@lms.com',
+    role: 'Admin',
+    avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=200&q=80',
+    enrolledCourseIds: ['course-1', 'course-2'],
+    createdAt: new Date().toISOString(),
+  },
+  {
+    id: 'user-cm-1',
+    name: 'Content Manager',
+    email: 'manager@lms.com',
+    role: 'Content Manager',
+    avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=200&q=80',
+    enrolledCourseIds: ['course-1'],
+    createdAt: new Date().toISOString(),
+  },
+  {
+    id: 'user-inst-1',
+    name: 'Dr. Marcus Vance',
+    email: 'marcus@lms.com',
+    role: 'Instructor',
+    avatar: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&w=200&q=80',
+    enrolledCourseIds: [],
+    createdAt: new Date().toISOString(),
+  },
+  {
+    id: 'user-student-1',
+    name: 'Elena Rostova',
+    email: 'elena@lms.com',
+    role: 'Student',
+    avatar: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&w=200&q=80',
+    enrolledCourseIds: ['course-1', 'course-2'],
+    createdAt: new Date().toISOString(),
+  },
+];
+
+const DEFAULT_COURSES: Course[] = [
+  {
+    id: 'course-1',
+    title: 'Full-Stack Next.js 14 & Strapi Masterclass',
+    subtitle: 'Master modern serverless web development with Next.js App Router and Headless Strapi CMS.',
+    description: 'A comprehensive step-by-step masterclass covering Next.js Server Components, Strapi REST & GraphQL APIs, Role-Based Access Control, JWT authentication, and Vercel & Railway cloud deployments.',
+    category: 'Web Development',
+    level: 'Intermediate',
+    price: 89.99,
+    published: true,
+    coverImage: 'https://images.unsplash.com/photo-1618401471353-b98afee0b2eb?auto=format&fit=crop&w=800&q=80',
+    instructorId: 'user-inst-1',
+    instructorName: 'Dr. Marcus Vance',
+    createdAt: new Date().toISOString(),
+    lessons: [
+      {
+        id: 'lesson-1-1',
+        courseId: 'course-1',
+        title: 'Introduction to Next.js App Router & Server Components',
+        durationMinutes: 18,
+        type: 'video',
+        videoUrl: 'https://www.youtube.com/embed/dQw4w9WgXcQ',
+        content: 'Overview of Next.js 14 architecture, server components vs client components, and directory layout.',
+        order: 1,
+      },
+      {
+        id: 'lesson-1-2',
+        courseId: 'course-1',
+        title: 'Strapi 5 Headless CMS Setup & PostgreSQL Schema Design',
+        durationMinutes: 25,
+        type: 'video',
+        videoUrl: 'https://www.youtube.com/embed/dQw4w9WgXcQ',
+        content: 'Setting up Strapi 5, defining content types, relations, and Neon PostgreSQL connection.',
+        order: 2,
+      },
+    ],
+  },
+  {
+    id: 'course-2',
+    title: 'Advanced UI/UX & Motion Design for Web Systems',
+    subtitle: 'Craft breathtaking digital experiences using CSS Glassmorphism, Tailwind, and Micro-interactions.',
+    description: 'Learn modern design system fundamentals, color harmony, typography hierarchy, micro-animations, accessible contrast ratios, and responsive dashboard layouts.',
+    category: 'Design & UI/UX',
+    level: 'Beginner',
+    price: 69.99,
+    published: true,
+    coverImage: 'https://images.unsplash.com/photo-1507238691740-187a5b1d37b8?auto=format&fit=crop&w=800&q=80',
+    instructorId: 'user-inst-2',
+    instructorName: 'Sarah Jenkins',
+    createdAt: new Date().toISOString(),
+    lessons: [
+      {
+        id: 'lesson-2-1',
+        courseId: 'course-2',
+        title: 'Design Tokens & Color Palette Construction',
+        durationMinutes: 15,
+        type: 'video',
+        videoUrl: 'https://www.youtube.com/embed/dQw4w9WgXcQ',
+        content: 'Creating a high-contrast dark theme color palette and design token hierarchy.',
+        order: 1,
+      },
+    ],
+  },
+  {
+    id: 'course-3',
+    title: 'Cloud Architecture & Microservices with Railway & Docker',
+    subtitle: 'Deploy scalable backend services, databases, and microservices with high reliability.',
+    description: 'Learn continuous deployment pipelines, environment configuration, database management, microservice communication, and monitoring.',
+    category: 'DevOps & Cloud',
+    level: 'Advanced',
+    price: 99.99,
+    published: true,
+    coverImage: 'https://images.unsplash.com/photo-1451187580459-43490279c0fa?auto=format&fit=crop&w=800&q=80',
+    instructorId: 'user-inst-1',
+    instructorName: 'Dr. Marcus Vance',
+    createdAt: new Date().toISOString(),
+    lessons: [],
+  },
+];
+
 export const LMSProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const toast = useToast();
-  const [users, setUsers] = useState<User[]>([]);
-  const [courses, setCourses] = useState<Course[]>([]);
+  const [users, setUsers] = useState<User[]>(DEFAULT_USERS);
+  const [courses, setCourses] = useState<Course[]>(DEFAULT_COURSES);
   const [progress, setProgress] = useState<UserCourseProgress[]>([]);
   const [blogPosts, setBlogPosts] = useState<BlogPost[]>([]);
   const [quizAttempts, setQuizAttempts] = useState<QuizAttempt[]>([]);
