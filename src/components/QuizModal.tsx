@@ -2,6 +2,7 @@
 
 import React, { useState } from 'react';
 import { useLMS } from '../context/LMSContext';
+import { useToast } from '../context/ToastContext';
 import { Quiz, QuizAttempt } from '../types';
 import { X, Award, CheckCircle2, XCircle, Sparkles, RefreshCw } from 'lucide-react';
 import confetti from 'canvas-confetti';
@@ -13,25 +14,45 @@ interface QuizModalProps {
 
 export const QuizModal: React.FC<QuizModalProps> = ({ quiz, onClose }) => {
   const { submitQuizAttempt, quizAttempts, currentUser } = useLMS();
+  const toast = useToast();
 
   const [userAnswers, setUserAnswers] = useState<Record<string, string>>({});
   const [submittedAttempt, setSubmittedAttempt] = useState<QuizAttempt | null>(null);
+  const [isRetaking, setIsRetaking] = useState(false);
 
   const previousAttempt = quizAttempts.find(
     (qa) => qa.quizId === quiz.id && qa.studentId === currentUser.id
   );
 
-  const activeResult = submittedAttempt || previousAttempt;
+  // When retaking, show fresh blank quiz until submitted
+  const activeResult = isRetaking ? submittedAttempt : (submittedAttempt || previousAttempt);
 
   const handleOptionSelect = (qId: string, optId: string) => {
     if (activeResult) return;
     setUserAnswers((prev) => ({ ...prev, [qId]: optId }));
   };
 
+  const handleRetake = () => {
+    setIsRetaking(true);
+    setSubmittedAttempt(null);
+    setUserAnswers({});
+    toast.info('Quiz Retake Started', 'All answers have been reset. Select your new choices.');
+  };
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    if (Object.keys(userAnswers).length === 0) {
+      toast.error('No Answers Selected', 'Please answer the quiz questions before submitting.');
+      return;
+    }
+
     const result = submitQuizAttempt(quiz.id, userAnswers);
     setSubmittedAttempt(result);
+    setIsRetaking(false);
+    toast.success(
+      result.passed ? 'Quiz Passed! 🎉' : 'Quiz Completed',
+      `You scored ${result.scorePercentage}% (Passing score: ${quiz.passingScore}%)`
+    );
 
     if (result.passed) {
       try {
@@ -91,11 +112,28 @@ export const QuizModal: React.FC<QuizModalProps> = ({ quiz, onClose }) => {
             </div>
 
             <button
-              onClick={() => setSubmittedAttempt(null)}
-              className="px-3 py-1.5 rounded-lg bg-[#1a2436] hover:bg-slate-800 border border-slate-700 text-xs font-semibold flex items-center space-x-1 self-start sm:self-auto"
+              onClick={handleRetake}
+              className="px-3.5 py-2 rounded-xl bg-[#1a2436] hover:bg-slate-800 border border-slate-700 hover:border-slate-600 text-xs font-semibold text-white flex items-center space-x-1.5 transition-all self-start sm:self-auto shadow-sm"
             >
-              <RefreshCw className="w-3.5 h-3.5" />
+              <RefreshCw className="w-3.5 h-3.5 text-cyan-400" />
               <span>Retake Quiz</span>
+            </button>
+          </div>
+        )}
+
+        {/* Retake In Progress Notice */}
+        {isRetaking && (
+          <div className="mt-4 p-3.5 rounded-xl bg-cyan-500/10 border border-cyan-500/30 text-cyan-200 text-xs flex items-center justify-between animate-fadeIn">
+            <span className="flex items-center gap-2">
+              <RefreshCw className="w-4 h-4 text-cyan-400 animate-spin" />
+              <span><strong>Retake In Progress:</strong> Select your new answers and submit for auto-grading below.</span>
+            </span>
+            <button
+              type="button"
+              onClick={() => setIsRetaking(false)}
+              className="text-xs text-slate-400 hover:text-white underline ml-3 shrink-0"
+            >
+              Cancel Retake
             </button>
           </div>
         )}

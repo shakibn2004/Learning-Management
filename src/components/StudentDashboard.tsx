@@ -87,12 +87,21 @@ export const StudentDashboard: React.FC<StudentDashboardProps> = ({ activeTab: p
   const studentAttempts = quizAttempts.filter(
     (qa) => String(qa.studentId) === String(currentUser.id)
   );
-  const passedQuizzesCount = studentAttempts.filter((qa) => qa.passed).length;
+  // Group by quizId to evaluate the latest attempt per quiz
+  const latestAttemptsByQuiz = Object.values(
+    studentAttempts.reduce((acc: Record<string, (typeof studentAttempts)[0]>, curr) => {
+      if (!acc[curr.quizId] || new Date(curr.completedAt) > new Date(acc[curr.quizId].completedAt)) {
+        acc[curr.quizId] = curr;
+      }
+      return acc;
+    }, {})
+  );
+  const passedQuizzesCount = latestAttemptsByQuiz.filter((qa) => qa.passed).length;
   const avgQuizScore =
-    studentAttempts.length > 0
+    latestAttemptsByQuiz.length > 0
       ? Math.round(
-          studentAttempts.reduce((sum, qa) => sum + (qa.scorePercentage || 0), 0) /
-            studentAttempts.length
+          latestAttemptsByQuiz.reduce((sum, qa) => sum + (qa.scorePercentage || 0), 0) /
+            latestAttemptsByQuiz.length
         )
       : 0;
 
